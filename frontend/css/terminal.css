@@ -1,0 +1,143 @@
+/* ============================================================
+   terminal.css — Terminal output, line types, input styling
+   ============================================================ */
+
+/* --- Output area --- */
+.terminal-output {
+  flex:          1;
+  overflow-y:    auto;
+  overflow-x:    hidden;
+  padding:       18px 0 12px;
+  scroll-behavior: smooth;
+}
+
+/* --- Individual terminal lines --- */
+.terminal-line {
+  display:        flex;
+  align-items:    flex-start;
+  gap:            10px;
+  padding:        1px 0;
+  word-break:     break-word;
+  white-space:    pre-wrap;
+  animation:      lineFadeIn 0.14s ease forwards;
+}
+
+@keyframes lineFadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Prefix glyph column */
+.line-prefix {
+  flex-shrink:  0;
+  width:        18px;
+  font-size:    var(--font-size-sm);
+  margin-top:   2px;
+  user-select:  none;
+}
+
+/* Content column */
+.line-content {
+  flex: 1;
+}
+
+/* ── Line type: User ── */
+.terminal-line.user .line-prefix  { color: var(--text-ghost); content: '>'; }
+.terminal-line.user .line-content { color: var(--text-user);  }
+
+/* ── Line type: Jarvis ── */
+.terminal-line.jarvis .line-prefix  { color: var(--text-jarvis); }
+.terminal-line.jarvis .line-content {
+  color:       var(--text-jarvis);
+  text-shadow: 0 0 10px var(--accent-glow-sm);
+}
+
+/* ── Line type: System ── */
+.terminal-line.system .line-prefix  { color: var(--text-system); opacity: 0.7; }
+.terminal-line.system .line-content {
+  color:     var(--text-system);
+  font-size: var(--font-size-sm);
+  opacity:   0.85;
+}
+
+/* ── Line type: Error ── */
+.terminal-line.error .line-prefix  { color: var(--text-error); }
+.terminal-line.error .line-content { color: var(--text-error); }
+
+/* ── Line type: Interrupted (dimmed) ── */
+.terminal-line.interrupted .line-prefix  { color: var(--text-dim); }
+.terminal-line.interrupted .line-content {
+  color:      var(--text-dim);
+  font-style: italic;
+}
+
+/* --- Streaming cursor on active Jarvis line --- */
+.terminal-line.jarvis.streaming .line-content::after {
+  content:   '▋';
+  animation: cursorBlink 0.75s step-end infinite;
+  color:     var(--text-jarvis);
+  margin-left: 1px;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* --- Audio visualizer canvas --- */
+.visualizer {
+  display:       none;
+  width:         100%;
+  max-width:     420px;
+  height:        36px;
+  margin:        6px 0 2px 28px; /* align with terminal content column */
+  opacity:       0.75;
+  border-radius: 2px;
+}
+.visualizer.active {
+  display: block;
+}
+
+/* ─────────────────────────────────────────
+   HUD Bottom — input bar lives in hud.css,
+   but the input element styles are here
+   ───────────────────────────────────────── */
+.terminal-input-row {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex:        1;
+  min-width:   0;
+}
+
+.input-prompt {
+  color:       var(--text-ghost);
+  flex-shrink: 0;
+  user-select: none;
+  font-size:   var(--font-size-base);
+}
+
+.terminal-input {
+  flex:        1;
+  min-width:   0;
+  background:  transparent;
+  border:      none;
+  outline:     none;
+  color:       var(--text-user);
+  font-family: var(--font-mono);
+  font-size:   var(--font-size-base);
+  line-height: var(--line-height);
+  caret-color: var(--accent);
+  padding:     0;
+}
+
+.terminal-input::placeholder {
+  color:      var(--text-muted);
+  font-style: italic;
+}
+
+/* Ghost text state (interim STT transcript) */
+.terminal-input.ghost {
+  color:      var(--text-ghost);
+  font-style: italic;
+}

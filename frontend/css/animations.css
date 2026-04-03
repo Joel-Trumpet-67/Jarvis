@@ -1,0 +1,103 @@
+/* ============================================================
+   animations.css — Boot sequence, transitions, typing effect
+   Full boot animation added in Phase 6. Working base for Phase 1.
+   ============================================================ */
+
+/* --- Boot overlay (shown on initial load) --- */
+.boot-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      var(--bg-primary);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  z-index:         500;
+  opacity:         1;
+  transition:      opacity 0.6s ease;
+}
+
+.boot-overlay.hidden {
+  opacity:        0;
+  pointer-events: none;
+}
+
+.boot-logo {
+  font-size:      clamp(24px, 5vw, 42px);
+  font-weight:    700;
+  letter-spacing: 0.35em;
+  color:          var(--text-jarvis);
+  text-shadow:    0 0 30px var(--accent-glow),
+                  0 0 60px var(--accent-glow-sm);
+  margin-bottom:  8px;
+  animation:      logoGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes logoGlow {
+  from { text-shadow: 0 0 20px var(--accent-glow),  0 0 40px var(--accent-glow-sm); }
+  to   { text-shadow: 0 0 40px var(--accent-glow),  0 0 80px var(--accent-glow-sm); }
+}
+
+.boot-subtitle {
+  font-size:      var(--font-size-sm);
+  letter-spacing: 0.4em;
+  color:          var(--text-hud);
+  margin-bottom:  32px;
+}
+
+.boot-log {
+  width:          min(480px, 80vw);
+  font-size:      var(--font-size-sm);
+  color:          var(--text-system);
+  list-style:     none;
+  text-align:     left;
+}
+
+.boot-log li {
+  padding:    2px 0;
+  opacity:    0;
+  animation:  bootLineIn 0.2s ease forwards;
+}
+
+@keyframes bootLineIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* --- Glow pulse on focused input --- */
+.hud-bottom:focus-within {
+  box-shadow: inset 0 1px 0 var(--hud-border-bright);
+}
+
+.terminal-input:focus {
+  /* Subtle glow on the bottom bar when typing */
+  filter: none; /* Handled by parent focus-within */
+}
+
+/* --- Typing effect helper class --- */
+.typing {
+  overflow:       hidden;
+  border-right:   2px solid var(--accent);
+  white-space:    nowrap;
+  animation:      typingExpand 0.5s steps(30) forwards,
+                  cursorFade 0.5s step-end 0.5s forwards;
+}
+
+@keyframes typingExpand {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+@keyframes cursorFade {
+  to { border-color: transparent; }
+}
+
+/* --- Fade in utility --- */
+.fade-in {
+  animation: genericFadeIn 0.3s ease forwards;
+}
+
+@keyframes genericFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

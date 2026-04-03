@@ -1,0 +1,118 @@
+/* ============================================================
+   main.css — Base reset, CSS variables, global layout
+   All color/font values are defined here as custom properties.
+   Every other CSS file inherits from these.
+   ============================================================ */
+
+/* --- Google Fonts import (fallback if preconnect fails) --- */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap');
+
+/* --- CSS Custom Properties --- */
+:root {
+  /* Backgrounds */
+  --bg-primary:          #0a0e17;
+  --bg-secondary:        #0d1220;
+  --bg-panel:            #080c14;
+
+  /* Text colors by line type */
+  --text-jarvis:         #00d4ff;
+  --text-user:           #ffffff;
+  --text-system:         #ffb300;
+  --text-error:          #ff4444;
+  --text-ghost:          #3d5166;
+  --text-dim:            #253040;
+  --text-muted:          #2d3f50;
+  --text-hud:            #5a8fa8;
+
+  /* Accents and glow */
+  --accent:              #00d4ff;
+  --accent-glow:         rgba(0, 212, 255, 0.20);
+  --accent-glow-sm:      rgba(0, 212, 255, 0.10);
+  --accent-amber:        #ffb300;
+  --accent-red:          #ff4444;
+
+  /* HUD borders */
+  --hud-border:          #182535;
+  --hud-border-bright:   #1f3347;
+
+  /* Typography */
+  --font-mono:           'JetBrains Mono', 'Courier New', Courier, monospace;
+  --font-size-base:      14px;
+  --font-size-sm:        12px;
+  --font-size-xs:        11px;
+  --line-height:         1.7;
+
+  /* Layout */
+  --hud-top-height:      46px;
+  --hud-bottom-height:   54px;
+  --terminal-padding-x:  28px;
+
+  /* Transitions */
+  --t-fast:              0.12s ease;
+  --t-med:               0.28s ease;
+}
+
+/* --- Universal reset --- */
+*, *::before, *::after {
+  box-sizing:  border-box;
+  margin:      0;
+  padding:     0;
+}
+
+/* --- Root layout --- */
+html, body {
+  width:       100%;
+  height:      100%;
+  overflow:    hidden;
+  background:  var(--bg-primary);
+  color:       var(--text-jarvis);
+  font-family: var(--font-mono);
+  font-size:   var(--font-size-base);
+  line-height: var(--line-height);
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  display:        flex;
+  flex-direction: column;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar        { width: 3px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--hud-border-bright); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* --- Text selection --- */
+::selection {
+  background: rgba(0, 212, 255, 0.25);
+  color:      var(--text-user);
+}
+
+/* --- Scanline CRT overlay --- */
+.scanlines {
+  position:         fixed;
+  inset:            0;
+  background:       repeating-linear-gradient(
+                      to bottom,
+                      transparent            0px,
+                      transparent            2px,
+                      rgba(0, 0, 0, 0.07)   2px,
+                      rgba(0, 0, 0, 0.07)   4px
+                    );
+  pointer-events:   none;
+  z-index:          9999;
+}
+
+/* --- Main content area (between HUD bars) --- */
+.terminal-wrapper {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+  padding:        0 var(--terminal-padding-x);
+  margin-top:     var(--hud-top-height);
+  margin-bottom:  var(--hud-bottom-height);
+  min-height:     0; /* Required for flex children to scroll */
+}

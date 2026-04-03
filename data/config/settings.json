@@ -1,0 +1,30 @@
+{
+  "model_api_url":                   "http://localhost:11434/api/chat",
+  "model_name":                      "mistral",
+  "model_timeout_seconds":           30,
+  "model_retry_count":               1,
+  "user_name":                       "Sir",
+
+  "voice_enabled":                   true,
+  "voice_lang":                      "en-GB",
+  "voice_rate":                      0.90,
+  "voice_pitch":                     0.85,
+  "wake_word":                       "hey jarvis",
+  "always_listen":                   false,
+  "stt_silence_ms":                  1500,
+  "tts_resume_delay_ms":             500,
+
+  "max_short_term_messages":         20,
+  "max_memory_injections":           5,
+  "max_memory_tokens":               500,
+  "dispatch_confidence_threshold":   0.80,
+
+  "allowed_dirs": [
+    "C:/Users/Joel/Documents",
+    "C:/Users/Joel/Desktop"
+  ],
+
+  "flask_host":                      "127.0.0.1",
+  "flask_port":                      5000,
+  "flask_debug":                     false
+}

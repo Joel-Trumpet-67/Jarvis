@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EIGENFORM — J.A.R.V.I.S.</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300&display=swap" rel="stylesheet" />
+
+  <!-- Styles (order matters) -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/terminal.css" />
+  <link rel="stylesheet" href="css/hud.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- Scanline CRT overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ── HUD: Top bar ───────────────────────────────────── -->
+  <header class="hud-top" role="banner">
+    <div class="hud-top-left">
+      <span class="hud-logo">EIGENFORM</span>
+      <span class="status-ring" id="statusRing" title="Connection status"></span>
+      <span class="hud-status-text" id="statusText">CONNECTING</span>
+    </div>
+    <div class="hud-top-right">
+      <span class="hud-clock" id="hudClock">--:--:--</span>
+    </div>
+  </header>
+
+  <!-- ── Main terminal area ─────────────────────────────── -->
+  <main class="terminal-wrapper" role="main">
+
+    <div
+      class="terminal-output"
+      id="terminalOutput"
+      role="log"
+      aria-live="polite"
+      aria-label="JARVIS terminal output"
+    ></div>
+
+    <!-- Audio visualizer (shown during voice input) -->
+    <canvas
+      class="visualizer"
+      id="visualizer"
+      width="400"
+      height="36"
+      aria-hidden="true"
+    ></canvas>
+
+  </main>
+
+  <!-- ── HUD: Bottom input bar ──────────────────────────── -->
+  <footer class="hud-bottom" role="contentinfo">
+
+    <div class="hud-bottom-left">
+      <span class="hud-label" id="micStatus">MIC: IDLE</span>
+    </div>
+
+    <div class="terminal-input-row">
+      <span class="input-prompt" aria-hidden="true">&gt;</span>
+      <input
+        type="text"
+        id="terminalInput"
+        class="terminal-input"
+        placeholder="Type a command or say 'Hey Jarvis'..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Command input"
+      />
+    </div>
+
+    <div class="hud-bottom-right">
+      <button class="hud-btn" id="muteBtn" title="Toggle TTS mute (M)">
+        MUTE: OFF
+      </button>
+      <button class="hud-btn hud-btn--danger" id="interruptBtn" title="Stop Jarvis (Esc)">
+        &#9632; STOP
+      </button>
+    </div>
+
+  </footer>
+
+  <!-- ── JavaScript (load order matters) ───────────────── -->
+  <script src="js/core/state.js"></script>
+  <script src="js/api/client.js"></script>
+  <script src="js/terminal/terminal.js"></script>
+  <script src="js/terminal/history.js"></script>
+  <script src="js/terminal/parser.js"></script>
+  <script src="js/voice/synthesis.js"></script>
+  <script src="js/voice/speech.js"></script>
+  <script src="js/ui/hud.js"></script>
+  <script src="js/ui/visualizer.js"></script>
+  <script src="js/ui/animations.js"></script>
+  <script src="js/core/app.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
