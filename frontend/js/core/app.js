@@ -151,6 +151,15 @@ const EigenApp = (() => {
     muteBtn.addEventListener('click', () => {
       EigenParser.handle('/mute');
     });
+
+    // T key — cycle theme (when not typing)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 't' || e.key === 'T') {
+        if (document.activeElement !== input) {
+          if (typeof EigenThemes !== 'undefined') EigenThemes.cycle();
+        }
+      }
+    });
   }
 
   /** Public boot function — called by main.js */
@@ -175,6 +184,9 @@ const EigenApp = (() => {
     if (typeof EigenVisualizer !== 'undefined' && EigenVisualizer.init) {
       EigenVisualizer.init();
     }
+
+    // Init theme switcher
+    if (typeof EigenThemes !== 'undefined') EigenThemes.init();
 
     // Restore session or play boot sequence
     await _restoreOrBoot();
