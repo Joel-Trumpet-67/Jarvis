@@ -7,8 +7,20 @@ import json
 import os
 import sys
 
-# Resolve path relative to this file so it works regardless of cwd
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def _get_root() -> str:
+    """
+    Return the project root directory.
+    - Frozen (PyInstaller exe): root = directory containing the exe,
+      so settings.json lives next to EIGENFORM.exe and stays editable.
+    - Source: root = project root (two levels up from this file).
+    """
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+_ROOT = _get_root()
 SETTINGS_PATH = os.path.join(_ROOT, "data", "config", "settings.json")
 
 

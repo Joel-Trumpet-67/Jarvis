@@ -21,9 +21,15 @@ from backend.api.routes.status import status_bp
 from backend.api.routes.session import session_bp
 from backend.api.routes.interrupt import interrupt_bp
 
-# Resolve the frontend directory relative to this file
-_ROOT     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_FRONTEND = os.path.join(_ROOT, "frontend")
+# Resolve the frontend directory.
+# - Frozen (PyInstaller): bundled inside sys._MEIPASS
+# - Source: sibling of the project root
+def _get_frontend() -> str:
+    if getattr(sys, "frozen", False):
+        return os.path.join(sys._MEIPASS, "frontend")
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+
+_FRONTEND = _get_frontend()
 
 
 def create_app() -> Flask:

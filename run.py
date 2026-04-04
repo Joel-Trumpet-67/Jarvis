@@ -16,8 +16,9 @@ import threading
 import subprocess
 import webbrowser
 
-# Add project root to path — must be before any backend imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path — development only (PyInstaller handles this when frozen)
+if not getattr(sys, "frozen", False):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from backend.main import create_app
 from backend.config import CONFIG
