@@ -72,8 +72,14 @@ def stream_response(
     }
 
     api_url    = CONFIG.get("model_api_url", "http://localhost:11434/api/chat")
-    timeout    = CONFIG.get("model_timeout_seconds", 30)
     max_retry  = CONFIG.get("model_retry_count", 1)
+
+    # Tuple timeout: (connect_seconds, read_seconds)
+    # Connect should be fast. Read can be very long — model may need time
+    # to load into memory on first inference (especially mistral on cold start).
+    connect_timeout = 10
+    read_timeout    = CONFIG.get("model_timeout_seconds", 120)
+    timeout = (connect_timeout, read_timeout)
 
     for attempt in range(max_retry + 1):
         try:

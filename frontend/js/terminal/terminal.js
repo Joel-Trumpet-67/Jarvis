@@ -67,12 +67,24 @@ const EigenTerminal = (() => {
     _createLine(text, type);
   }
 
-  /** Open a new empty Jarvis line ready to receive streamed tokens. */
+  /**
+   * Open a new Jarvis line showing a thinking placeholder.
+   * The placeholder is cleared automatically on the first token.
+   */
   function startStreaming() {
     const line = _createLine('', 'jarvis');
     if (line) {
       line.classList.add('streaming');
       _activeStreamLine = line;
+
+      // Show thinking indicator — replaced by real content on first token
+      const content = line.querySelector('.line-content');
+      if (content) {
+        content.dataset.thinking = 'true';
+        content.textContent = 'Thinking...';
+        content.style.opacity = '0.4';
+        content.style.fontStyle = 'italic';
+      }
     }
   }
 
@@ -81,6 +93,13 @@ const EigenTerminal = (() => {
     if (!_activeStreamLine) return;
     const content = _activeStreamLine.querySelector('.line-content');
     if (content) {
+      // Clear thinking placeholder on first real token
+      if (content.dataset.thinking === 'true') {
+        content.textContent = '';
+        content.style.opacity = '';
+        content.style.fontStyle = '';
+        delete content.dataset.thinking;
+      }
       content.textContent += token;
       _scrollToBottom();
     }
