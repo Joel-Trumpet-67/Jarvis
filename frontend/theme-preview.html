@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EIGENFORM — Theme Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,700;1,300&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #080808;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 32px 24px 48px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #555;
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #333;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+    }
+    .card-label {
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      color: #444;
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+    .card-label span {
+      color: #888;
+    }
+
+    /* ── Each mock is a scaled-down app window ── */
+    .mock {
+      height: 420px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .mock-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      flex-shrink: 0;
+      height: 40px;
+    }
+    .mock-top-left { display: flex; align-items: center; gap: 10px; }
+    .mock-top-right { display: flex; align-items: center; gap: 8px; }
+
+    .mock-body {
+      flex: 1;
+      overflow: hidden;
+      padding: 16px 18px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .mock-bottom {
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 10px;
+      flex-shrink: 0;
+      height: 46px;
+    }
+
+    .mock-line {
+      display: flex;
+      gap: 8px;
+      font-size: 11.5px;
+      line-height: 1.6;
+    }
+    .mock-line .pfx { flex-shrink: 0; width: 14px; }
+    .mock-line .txt { flex: 1; }
+
+    .mock-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    .mock-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      pointer-events: none;
+    }
+    .mock-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      cursor: default;
+      border-radius: 2px;
+    }
+    .mock-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .mock-logo {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+    }
+    .mock-clock { font-size: 10px; font-weight: 300; }
+    .mock-status { font-size: 9px; letter-spacing: 0.12em; }
+
+    /* scanlines overlay */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 2px,
+        rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 10;
+    }
+
+
+    /* ════════════════════════════════════════════
+       THEME A — SLEEK DARK GLASS
+    ════════════════════════════════════════════ */
+    .theme-a .mock {
+      background: #0b0e14;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .theme-a .mock-top {
+      background: rgba(255,255,255,0.03);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px 12px 0 0;
+    }
+    .theme-a .mock-logo { color: #60a5fa; }
+    .theme-a .mock-dot  { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.7); }
+    .theme-a .mock-status { color: #4a6580; }
+    .theme-a .mock-clock  { color: #4a6580; }
+    .theme-a .mock-body { background: transparent; }
+    .theme-a .line-user  .pfx { color: #2a3a50; }
+    .theme-a .line-user  .txt { color: #cbd5e1; }
+    .theme-a .line-larry .pfx { color: #60a5fa; }
+    .theme-a .line-larry .txt { color: #93c5fd; text-shadow: 0 0 18px rgba(96,165,250,0.25); }
+    .theme-a .line-sys   .pfx { color: #a78bfa; opacity:0.6; }
+    .theme-a .line-sys   .txt { color: #a78bfa; font-size: 10.5px; opacity: 0.7; }
+    .theme-a .mock-bottom {
+      background: rgba(255,255,255,0.025);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-radius: 0 0 12px 12px;
+      backdrop-filter: blur(12px);
+    }
+    .theme-a .mock-prompt { color: #2a3a50; }
+    .theme-a .mock-input  { color: #e2e8f0; }
+    .theme-a .mock-btn {
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.2);
+      color: #60a5fa;
+    }
+    .theme-a .mock-btn.danger {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #f87171;
+    }
+
+
+    /* ════════════════════════════════════════════
+       THEME B — MILITARY TACTICAL
+    ════════════════════════════════════════════ */
+    .theme-b .mock {
+      background: #000000;
+      border: 1px solid #0a2a0a;
+      border-radius: 0;
+      box-shadow: 0 0 0 1px #0f1f0f, 0 24px 50px rgba(0,0,0,0.9);
+    }
+    .theme-b .mock::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,60,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,60,0.015) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* Corner brackets */
+    .theme-b .mock::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px solid transparent;
+      border-image: none;
+      background:
+        linear-gradient(#0f2a0f,#0f2a0f) top left / 14px 1px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) top left / 1px 14px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) top right / 14px 1px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) top right / 1px 14px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) bottom left / 14px 1px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) bottom left / 1px 14px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) bottom right / 14px 1px no-repeat,
+        linear-gradient(#0f2a0f,#0f2a0f) bottom right / 1px 14px no-repeat;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .theme-b .mock-top {
+      background: #000;
+      border-bottom: 1px solid #0a2a0a;
+      position: relative;
+      z-index: 5;
+    }
+    .theme-b .mock-logo  { color: #00c040; font-size: 9px; letter-spacing: 0.3em; }
+    .theme-b .mock-dot   { background: #00e050; box-shadow: 0 0 8px #00e050; border-radius: 0; width: 6px; height: 6px; }
+    .theme-b .mock-status { color: #1a5a1a; }
+    .theme-b .mock-clock  { color: #1a5a1a; font-size: 9px; letter-spacing: 0.15em; }
+    .theme-b .mock-body  { position: relative; z-index: 5; }
+    .theme-b .line-user  .pfx { color: #0a3a0a; }
+    .theme-b .line-user  .txt { color: #80c080; }
+    .theme-b .line-larry .pfx { color: #00e050; }
+    .theme-b .line-larry .txt { color: #00e050; text-shadow: 0 0 8px rgba(0,224,80,0.5); }
+    .theme-b .line-sys   .pfx { color: #c07800; opacity:0.8; }
+    .theme-b .line-sys   .txt { color: #c07800; font-size: 10.5px; opacity: 0.8; }
+    .theme-b .mock-bottom {
+      background: #000;
+      border-top: 1px solid #0a2a0a;
+      position: relative;
+      z-index: 5;
+    }
+    .theme-b .mock-prompt { color: #0a3a0a; }
+    .theme-b .mock-input  { color: #80c080; }
+    .theme-b .mock-btn {
+      background: transparent;
+      border: 1px solid #0a2a0a;
+      color: #1a6a1a;
+      border-radius: 0;
+    }
+    .theme-b .mock-btn.danger {
+      border: 1px solid #3a0a0a;
+      color: #6a1a1a;
+      border-radius: 0;
+    }
+
+
+    /* ════════════════════════════════════════════
+       THEME C — MINIMAL NOIR
+    ════════════════════════════════════════════ */
+    .theme-c .mock {
+      background: #0f0f0f;
+      border-radius: 4px;
+      border: 1px solid #1e1e1e;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+    }
+    .theme-c .scanlines { display: none; }
+    .theme-c .mock-top {
+      background: #0f0f0f;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .theme-c .mock-logo  { color: #d4d4d4; font-size: 9px; letter-spacing: 0.3em; font-weight: 300; }
+    .theme-c .mock-dot   {
+      background: transparent;
+      border: 1px solid #c8a84b;
+      box-shadow: none;
+      width: 5px; height: 5px;
+    }
+    .theme-c .mock-status { color: #3a3a3a; }
+    .theme-c .mock-clock  { color: #3a3a3a; font-weight: 300; }
+    .theme-c .mock-body  { gap: 14px; padding: 20px 22px 12px; }
+    .theme-c .line-user  .pfx { color: #282828; }
+    .theme-c .line-user  .txt { color: #e8e8e8; font-weight: 300; }
+    .theme-c .line-larry .pfx { color: #c8a84b; }
+    .theme-c .line-larry .txt { color: #d4d4d4; font-weight: 300; }
+    .theme-c .line-sys   .pfx { color: #282828; }
+    .theme-c .line-sys   .txt { color: #383838; font-size: 10.5px; }
+    .theme-c .mock-bottom {
+      background: #0f0f0f;
+      border-top: 1px solid #1a1a1a;
+    }
+    .theme-c .mock-prompt { color: #2a2a2a; }
+    .theme-c .mock-input  { color: #e8e8e8; font-weight: 300; }
+    .theme-c .mock-btn {
+      background: transparent;
+      border: 1px solid #222;
+      color: #444;
+      border-radius: 2px;
+      font-weight: 300;
+    }
+    .theme-c .mock-btn.danger {
+      border: 1px solid #2a1a1a;
+      color: #5a2a2a;
+    }
+
+
+    /* ════════════════════════════════════════════
+       THEME D — FULL HOLOGRAPHIC HUD
+    ════════════════════════════════════════════ */
+    .theme-d .mock {
+      background: #020b18;
+      border: 1px solid rgba(0,220,255,0.18);
+      border-radius: 2px;
+      box-shadow:
+        0 0 0 1px rgba(0,220,255,0.05),
+        0 0 30px rgba(0,180,255,0.06),
+        0 24px 60px rgba(0,0,0,0.85);
+    }
+    /* HUD corner brackets */
+    .theme-d .mock::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) top left / 20px 1px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) top left / 1px 20px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) top right / 20px 1px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) top right / 1px 20px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) bottom left / 20px 1px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) bottom left / 1px 20px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) bottom right / 20px 1px no-repeat,
+        linear-gradient(rgba(0,220,255,0.4),rgba(0,220,255,0.4)) bottom right / 1px 20px no-repeat;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .theme-d .mock-top {
+      background: rgba(0,220,255,0.03);
+      border-bottom: 1px solid rgba(0,220,255,0.15);
+      position: relative;
+      z-index: 5;
+    }
+    .theme-d .mock-logo   { color: #00dcff; font-size: 9.5px; letter-spacing: 0.28em; text-shadow: 0 0 14px rgba(0,220,255,0.8); }
+    .theme-d .mock-dot    { background: #00dcff; box-shadow: 0 0 10px #00dcff, 0 0 20px rgba(0,220,255,0.5); animation: hudpulse 2s infinite; }
+    @keyframes hudpulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .theme-d .mock-status { color: rgba(0,180,255,0.4); letter-spacing: 0.18em; }
+    .theme-d .mock-clock  { color: rgba(0,180,255,0.5); letter-spacing: 0.15em; }
+    .theme-d .mock-body   { position: relative; z-index: 5; gap: 11px; }
+    .theme-d .line-user  .pfx { color: rgba(0,180,255,0.25); }
+    .theme-d .line-user  .txt { color: rgba(255,255,255,0.75); }
+    .theme-d .line-larry .pfx { color: #00dcff; }
+    .theme-d .line-larry .txt { color: #00dcff; text-shadow: 0 0 12px rgba(0,220,255,0.6), 0 0 24px rgba(0,220,255,0.2); }
+    .theme-d .line-sys   .pfx { color: #ffa500; opacity:0.5; }
+    .theme-d .line-sys   .txt { color: #ffa500; font-size: 10.5px; opacity: 0.6; }
+    .theme-d .mock-bottom {
+      background: rgba(0,220,255,0.02);
+      border-top: 1px solid rgba(0,220,255,0.15);
+      position: relative;
+      z-index: 5;
+    }
+    .theme-d .mock-prompt { color: rgba(0,180,255,0.25); }
+    .theme-d .mock-input  { color: rgba(255,255,255,0.8); }
+    .theme-d .mock-btn {
+      background: rgba(0,220,255,0.05);
+      border: 1px solid rgba(0,220,255,0.2);
+      color: rgba(0,220,255,0.6);
+      border-radius: 0;
+    }
+    .theme-d .mock-btn.danger {
+      background: rgba(255,60,60,0.04);
+      border: 1px solid rgba(255,60,60,0.2);
+      color: rgba(255,80,80,0.6);
+    }
+
+    /* data bars for theme D */
+    .theme-d .hud-bars {
+      display: flex;
+      gap: 3px;
+      align-items: flex-end;
+      height: 16px;
+    }
+    .theme-d .hud-bars span {
+      width: 3px;
+      background: rgba(0,220,255,0.4);
+      border-radius: 0;
+    }
+
+    /* pick button at bottom */
+    .pick-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid #222;
+      color: #444;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .pick-btn:hover { border-color: #555; color: #999; }
+  </style>
+</head>
+<body>
+
+  <h1>EIGENFORM</h1>
+  <p class="subtitle">THEME PREVIEW — SELECT A DIRECTION</p>
+
+  <div class="grid">
+
+    <!-- ── A: SLEEK DARK GLASS ── -->
+    <div class="card theme-a">
+      <div class="card-label">A — <span>SLEEK DARK GLASS</span></div>
+      <div class="mock">
+        <div class="scanlines"></div>
+        <div class="mock-top">
+          <div class="mock-top-left">
+            <span class="mock-logo">EIGENFORM</span>
+            <span class="mock-dot"></span>
+            <span class="mock-status">ONLINE</span>
+          </div>
+          <div class="mock-top-right">
+            <span class="mock-clock">14:22:08</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-line line-sys">
+            <span class="pfx">◈</span>
+            <span class="txt">Larry online. At your service, Sir.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">›</span>
+            <span class="txt">Who are you?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">◆</span>
+            <span class="txt">I am Larry, your personal assistant. At your service, Sir.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">›</span>
+            <span class="txt">What's the weather like?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">◆</span>
+            <span class="txt">I don't have live weather access at present, Sir — shall I open a weather service for you?</span>
+          </div>
+        </div>
+        <div class="mock-bottom">
+          <div class="mock-input-row">
+            <span class="mock-prompt" style="color:inherit">›</span>
+            <input class="mock-input" value="Type a command..." readonly />
+          </div>
+          <button class="mock-btn">MUTE</button>
+          <button class="mock-btn danger">■ STOP</button>
+        </div>
+      </div>
+      <button class="pick-btn" onclick="alert('A — Sleek Dark Glass selected. Tell Claude!')">SELECT A</button>
+    </div>
+
+    <!-- ── B: MILITARY TACTICAL ── -->
+    <div class="card theme-b">
+      <div class="card-label">B — <span>MILITARY TACTICAL</span></div>
+      <div class="mock">
+        <div class="scanlines"></div>
+        <div class="mock-top">
+          <div class="mock-top-left">
+            <span class="mock-logo">EIGENFORM</span>
+            <span class="mock-dot"></span>
+            <span class="mock-status">SYS:ONLINE</span>
+          </div>
+          <div class="mock-top-right">
+            <span class="mock-clock">14:22:08</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-line line-sys">
+            <span class="pfx">[!]</span>
+            <span class="txt">LARRY ONLINE. STANDING BY.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">&gt;&gt;</span>
+            <span class="txt">Who are you?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">[L]</span>
+            <span class="txt">I am Larry, your personal assistant. At your service, Sir.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">&gt;&gt;</span>
+            <span class="txt">What's the weather like?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">[L]</span>
+            <span class="txt">No live weather feed available, Sir. Shall I route to a weather service?</span>
+          </div>
+        </div>
+        <div class="mock-bottom">
+          <div class="mock-input-row">
+            <span class="mock-prompt" style="color:#0a3a0a">&gt;&gt;</span>
+            <input class="mock-input" value="INPUT COMMAND..." readonly />
+          </div>
+          <button class="mock-btn">MUTE</button>
+          <button class="mock-btn danger">HALT</button>
+        </div>
+      </div>
+      <button class="pick-btn" onclick="alert('B — Military Tactical selected. Tell Claude!')">SELECT B</button>
+    </div>
+
+    <!-- ── C: MINIMAL NOIR ── -->
+    <div class="card theme-c">
+      <div class="card-label">C — <span>MINIMAL NOIR</span></div>
+      <div class="mock">
+        <div class="scanlines"></div>
+        <div class="mock-top">
+          <div class="mock-top-left">
+            <span class="mock-logo">EIGENFORM</span>
+            <span class="mock-dot"></span>
+            <span class="mock-status">online</span>
+          </div>
+          <div class="mock-top-right">
+            <span class="mock-clock">14:22:08</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-line line-sys">
+            <span class="pfx">—</span>
+            <span class="txt">Larry online.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">›</span>
+            <span class="txt">Who are you?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">·</span>
+            <span class="txt">I am Larry, your personal assistant. At your service, Sir.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">›</span>
+            <span class="txt">What's the weather like?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">·</span>
+            <span class="txt">No live weather access, Sir. Shall I open a weather service?</span>
+          </div>
+        </div>
+        <div class="mock-bottom">
+          <div class="mock-input-row">
+            <span class="mock-prompt" style="color:#282828">›</span>
+            <input class="mock-input" value="Type a command..." readonly />
+          </div>
+          <button class="mock-btn">mute</button>
+          <button class="mock-btn danger">stop</button>
+        </div>
+      </div>
+      <button class="pick-btn" onclick="alert('C — Minimal Noir selected. Tell Claude!')">SELECT C</button>
+    </div>
+
+    <!-- ── D: FULL HOLOGRAPHIC HUD ── -->
+    <div class="card theme-d">
+      <div class="card-label">D — <span>FULL HOLOGRAPHIC HUD</span></div>
+      <div class="mock">
+        <div class="scanlines"></div>
+        <div class="mock-top">
+          <div class="mock-top-left">
+            <span class="mock-logo">EIGENFORM</span>
+            <span class="mock-dot"></span>
+            <span class="mock-status">◈ ONLINE</span>
+          </div>
+          <div class="mock-top-right">
+            <div class="hud-bars">
+              <span style="height:6px"></span><span style="height:10px"></span>
+              <span style="height:14px"></span><span style="height:9px"></span>
+              <span style="height:16px"></span><span style="height:11px"></span>
+              <span style="height:7px"></span>
+            </div>
+            <span class="mock-clock">14:22:08</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-line line-sys">
+            <span class="pfx">⬡</span>
+            <span class="txt">LARRY ONLINE — ALL SYSTEMS NOMINAL</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">▷</span>
+            <span class="txt">Who are you?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">◈</span>
+            <span class="txt">I am Larry, your personal assistant. At your service, Sir.</span>
+          </div>
+          <div class="mock-line line-user">
+            <span class="pfx">▷</span>
+            <span class="txt">What's the weather like?</span>
+          </div>
+          <div class="mock-line line-larry">
+            <span class="pfx">◈</span>
+            <span class="txt">No live weather feed, Sir. Shall I route to an external source?</span>
+          </div>
+        </div>
+        <div class="mock-bottom">
+          <div class="mock-input-row">
+            <span class="mock-prompt" style="color:rgba(0,180,255,0.25)">▷</span>
+            <input class="mock-input" value="AWAITING INPUT..." readonly />
+          </div>
+          <button class="mock-btn">MUTE</button>
+          <button class="mock-btn danger">■ HALT</button>
+        </div>
+      </div>
+      <button class="pick-btn" onclick="alert('D — Holographic HUD selected. Tell Claude!')">SELECT D</button>
+    </div>
+
+  </div>
+
+</body>
+</html>
