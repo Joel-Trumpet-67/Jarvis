@@ -1,15 +1,19 @@
 """
-engine.py — Calls the Ollama AI model API with streaming enabled.
+engine.py — Calls the AI model API with streaming enabled.
+
+Supports two API formats controlled by 'api_format' in settings.json:
+
+  "ollama"  — Ollama local API (http://localhost:11434/api/chat)
+              Streaming: newline-delimited JSON
+              Token path: chunk["message"]["content"]
+
+  "openai"  — OpenAI-compatible API (Groq, OpenAI, LM Studio, etc.)
+              Streaming: SSE lines starting with 'data: '
+              Token path: chunk["choices"][0]["delta"]["content"]
+              Requires: api_key in settings.json
 
 Yields SSE-compatible event dicts that chat.py wraps and sends to the frontend.
 Checks session cancel_requested on every token — stops mid-stream if interrupted.
-
-Ollama streaming format:
-  POST http://localhost:11434/api/chat
-  Body: {"model": "mistral", "messages": [...], "stream": true}
-  Response: newline-delimited JSON
-    {"message": {"role": "assistant", "content": "token"}, "done": false}
-    {"message": {"role": "assistant", "content": ""}, "done": true, ...}
 """
 
 import sys
@@ -27,23 +31,52 @@ from backend.ai.memory.short_term import get_session
 
 def _build_messages(session_id: str, user_message: str, system_prompt: str) -> list:
     """
-    Assemble the messages array for the Ollama API.
+    Assemble the messages array for the model API.
     Format: [system, ...history, user_message]
     """
     max_msgs = CONFIG.get("max_short_term_messages", 20)
-    session = get_session(session_id)
-    history = session.get_messages(max_count=max_msgs)
+    session  = get_session(session_id)
+    history  = session.get_messages(max_count=max_msgs)
 
     messages = [{"role": "system", "content": system_prompt}]
 
     for msg in history:
-        messages.append({
-            "role":    msg["role"],
-            "content": msg["content"],
-        })
+        messages.append({"role": msg["role"], "content": msg["content"]})
 
     messages.append({"role": "user", "content": user_message})
     return messages
+
+
+def _extract_token_ollama(raw_line: bytes) -> str | None:
+    """Parse one streaming line from Ollama format."""
+    try:
+        chunk = json.loads(raw_line.decode("utf-8"))
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    if chunk.get("done"):
+        return None
+    return chunk.get("message", {}).get("content") or None
+
+
+def _extract_token_openai(raw_line: bytes) -> str | None:
+    """Parse one streaming line from OpenAI/Groq SSE format."""
+    try:
+        line = raw_line.decode("utf-8").strip()
+    except UnicodeDecodeError:
+        return None
+
+    if not line.startswith("data: "):
+        return None
+    data = line[6:]
+    if data == "[DONE]":
+        return None
+    try:
+        chunk = json.loads(data)
+    except json.JSONDecodeError:
+        return None
+
+    delta = chunk.get("choices", [{}])[0].get("delta", {})
+    return delta.get("content") or None
 
 
 def stream_response(
@@ -52,7 +85,7 @@ def stream_response(
     system_prompt: str,
 ) -> Generator[dict, None, None]:
     """
-    Generator that streams tokens from the Ollama API.
+    Generator that streams tokens from the AI model API.
 
     Yields dicts (these become SSE events in chat.py):
       {"type": "token",       "content": "..."}
@@ -63,30 +96,43 @@ def stream_response(
     session = get_session(session_id)
     session.clear_cancel()
 
-    messages = _build_messages(session_id, user_message, system_prompt)
-
-    payload = {
-        "model":      CONFIG.get("model_name", "mistral"),
-        "messages":   messages,
-        "stream":     True,
-        "keep_alive": "10m",   # Keep model loaded in memory for 10 mins between requests
-    }
-
+    messages   = _build_messages(session_id, user_message, system_prompt)
+    api_format = CONFIG.get("api_format", "ollama")
     api_url    = CONFIG.get("model_api_url", "http://localhost:11434/api/chat")
+    api_key    = CONFIG.get("api_key", "")
+    model_name = CONFIG.get("model_name", "mistral")
     max_retry  = CONFIG.get("model_retry_count", 1)
+    timeout    = (10, CONFIG.get("model_timeout_seconds", 60))
 
-    # Tuple timeout: (connect_seconds, read_seconds)
-    # Connect should be fast. Read can be very long — model may need time
-    # to load into memory on first inference (especially mistral on cold start).
-    connect_timeout = 10
-    read_timeout    = CONFIG.get("model_timeout_seconds", 120)
-    timeout = (connect_timeout, read_timeout)
+    # Build payload and headers based on format
+    if api_format == "openai":
+        payload = {
+            "model":    model_name,
+            "messages": messages,
+            "stream":   True,
+        }
+        headers = {
+            "Content-Type":  "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        token_extractor = _extract_token_openai
+    else:
+        # Ollama format
+        payload = {
+            "model":      model_name,
+            "messages":   messages,
+            "stream":     True,
+            "keep_alive": "10m",
+        }
+        headers = {"Content-Type": "application/json"}
+        token_extractor = _extract_token_ollama
 
     for attempt in range(max_retry + 1):
         try:
             response = requests.post(
                 api_url,
                 json=payload,
+                headers=headers,
                 stream=True,
                 timeout=timeout,
             )
@@ -95,7 +141,7 @@ def stream_response(
             collected_tokens = []
 
             for raw_line in response.iter_lines():
-                # Hard interrupt check — every single token
+                # Hard interrupt check on every token
                 if session.is_cancelled():
                     yield {"type": "interrupted"}
                     return
@@ -103,15 +149,7 @@ def stream_response(
                 if not raw_line:
                     continue
 
-                try:
-                    chunk = json.loads(raw_line.decode("utf-8"))
-                except (json.JSONDecodeError, UnicodeDecodeError):
-                    continue
-
-                if chunk.get("done"):
-                    break
-
-                token = chunk.get("message", {}).get("content", "")
+                token = token_extractor(raw_line)
                 if token:
                     collected_tokens.append(token)
                     yield {"type": "token", "content": token}
@@ -132,10 +170,7 @@ def stream_response(
             yield {
                 "type":    "error",
                 "code":    "MODEL_OFFLINE",
-                "message": (
-                    "My neural link appears to be offline, sir. "
-                    "Attempting reconnection."
-                ),
+                "message": "My neural link appears to be offline, sir. Attempting reconnection.",
             }
             return
 
@@ -146,22 +181,15 @@ def stream_response(
             yield {
                 "type":    "error",
                 "code":    "MODEL_TIMEOUT",
-                "message": (
-                    "The AI core is taking longer than expected, sir. "
-                    "Please try again."
-                ),
+                "message": "The AI core is taking longer than expected, sir. Please try again.",
             }
             return
 
         except requests.exceptions.HTTPError as e:
-            yield {
-                "type":    "error",
-                "code":    "HTTP_ERROR",
-                "message": (
-                    f"The model returned an unexpected response, sir. "
-                    f"Status: {e.response.status_code}"
-                ),
-            }
+            status = e.response.status_code if e.response else "unknown"
+            msg = "Invalid API key, sir — please check your settings." if status == 401 else \
+                  f"The model returned an unexpected response, sir. (HTTP {status})"
+            yield {"type": "error", "code": "HTTP_ERROR", "message": msg}
             return
 
         except Exception as e:

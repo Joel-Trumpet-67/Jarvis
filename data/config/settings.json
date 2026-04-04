@@ -1,7 +1,9 @@
 {
-  "model_api_url":                   "http://localhost:11434/api/chat",
-  "model_name":                      "phi3:mini",
-  "model_timeout_seconds":           200,
+  "api_format":                      "openai",
+  "model_api_url":                   "https://api.groq.com/openai/v1/chat/completions",
+  "model_name":                      "llama-3.1-8b-instant",
+  "api_key":                         "PASTE_YOUR_GROQ_KEY_HERE",
+  "model_timeout_seconds":           60,
   "model_retry_count":               1,
   "user_name":                       "Sir",
 
