@@ -1,7 +1,7 @@
 {
   "model_api_url":                   "http://localhost:11434/api/chat",
   "model_name":                      "mistral",
-  "model_timeout_seconds":           120,
+  "model_timeout_seconds":           200,
   "model_retry_count":               1,
   "user_name":                       "Sir",
 

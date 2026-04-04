@@ -66,9 +66,10 @@ def stream_response(
     messages = _build_messages(session_id, user_message, system_prompt)
 
     payload = {
-        "model":    CONFIG.get("model_name", "mistral"),
-        "messages": messages,
-        "stream":   True,
+        "model":      CONFIG.get("model_name", "mistral"),
+        "messages":   messages,
+        "stream":     True,
+        "keep_alive": "10m",   # Keep model loaded in memory for 10 mins between requests
     }
 
     api_url    = CONFIG.get("model_api_url", "http://localhost:11434/api/chat")
