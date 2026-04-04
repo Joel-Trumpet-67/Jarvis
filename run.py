@@ -32,7 +32,7 @@ def main():
     print(f"  Server : http://{host}:{port}")
     print(f"  Status : {get_boot_message()}")
     print(f"{'=' * 54}")
-    print(f"  Open frontend/index.html in your browser to begin.")
+    print(f"  Open http://{host}:{port} in Chrome or Edge to begin.")
     print(f"  Press Ctrl+C to stop.\n")
 
     app.run(host=host, port=port, debug=debug, threaded=True)

@@ -7,8 +7,9 @@
  */
 
 window.EIGENFORM = {
-  // Backend URL — change this if Flask runs on a different port
-  API_BASE: 'http://127.0.0.1:5000',
+  // Backend URL — empty string means same origin (Flask serves the frontend)
+  // Only change this if you're running frontend and backend separately.
+  API_BASE: '',
 
   // Session identity
   sessionId: null,
