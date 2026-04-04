@@ -81,19 +81,8 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Exclude heavy packages we don't need
+        # Only exclude packages that are definitely not used
         "tkinter",
-        "unittest",
-        "email",
-        "html",
-        "http.server",
-        "xml",
-        "xmlrpc",
-        "pydoc",
-        "doctest",
-        "difflib",
-        "pickle",
-        "sqlite3",
         "numpy",
         "pandas",
         "matplotlib",

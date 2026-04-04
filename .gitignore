@@ -3,7 +3,9 @@ data/config/settings.json
 
 # PyInstaller build output
 dist/
+dist2/
 build/
+build2/
 *.spec.bak
 
 # Python
