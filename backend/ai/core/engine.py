@@ -30,27 +30,41 @@ from backend.config import CONFIG
 from backend.ai.memory.short_term import get_session
 
 
-def _sanitize_token(token: str, ai_name: str) -> str:
+def _sanitize(text: str, ai_name: str) -> str:
     """
-    Last-resort filter: if the model slips and says Jarvis or J.A.R.V.I.S.,
-    replace it with the configured AI name before the token reaches the frontend.
+    Replace any Jarvis identity slips with the correct AI name.
+    Operates on complete strings (not per-token) to catch split patterns.
     """
-    token = re.sub(r'J\.A\.R\.V\.I\.S\.', ai_name, token)
-    token = re.sub(r'\bJARVIS\b', ai_name, token, flags=re.IGNORECASE)
-    token = re.sub(r'\bJarvis\b', ai_name, token)
-    return token
+    text = re.sub(r'J\.A\.R\.V\.I\.S\.', ai_name, text)
+    text = re.sub(r'\bJARVIS\b', ai_name, text, flags=re.IGNORECASE)
+    text = re.sub(r'\bJarvis\b', ai_name, text)
+    return text
 
 
 def _build_messages(session_id: str, user_message: str, system_prompt: str) -> list:
     """
     Assemble the messages array for the model API.
-    Format: [system, ...history, user_message]
+    Format: [system, identity_seed, ...history, user_message]
+
+    The identity_seed is a pre-filled assistant message that locks in
+    the AI's name before any user conversation begins. This prevents
+    the model from defaulting to a trained identity like Jarvis.
     """
+    ai_name  = CONFIG.get("ai_name", "Rocky")
+    user_name = CONFIG.get("user_name", "Sir")
     max_msgs = CONFIG.get("max_short_term_messages", 20)
     session  = get_session(session_id)
     history  = session.get_messages(max_count=max_msgs)
 
     messages = [{"role": "system", "content": system_prompt}]
+
+    # Identity seed — model sees itself having already introduced as Rocky
+    # Only inject if there's no history yet (fresh session)
+    if not history:
+        messages.append({
+            "role": "assistant",
+            "content": f"I am {ai_name}. Your personal assistant, {user_name}. Online and ready."
+        })
 
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
@@ -152,6 +166,7 @@ def stream_response(
             response.raise_for_status()
 
             collected_tokens = []
+            token_buffer = ""  # Rolling buffer for cross-token sanitization
 
             for raw_line in response.iter_lines():
                 # Hard interrupt check on every token
@@ -163,10 +178,27 @@ def stream_response(
                     continue
 
                 token = token_extractor(raw_line)
-                if token:
-                    token = _sanitize_token(token, ai_name)
-                    collected_tokens.append(token)
-                    yield {"type": "token", "content": token}
+                if not token:
+                    continue
+
+                # Accumulate into buffer, sanitize the whole buffer each time
+                token_buffer += token
+                clean = _sanitize(token_buffer, ai_name)
+
+                # Emit only the newly safe portion (keep last 20 chars buffered
+                # in case a bad pattern is still arriving across tokens)
+                if len(clean) > 20:
+                    emit = clean[:-20]
+                    token_buffer = clean[-20:]
+                    collected_tokens.append(emit)
+                    yield {"type": "token", "content": emit}
+                # else keep buffering
+
+            # Flush remaining buffer
+            if token_buffer:
+                final = _sanitize(token_buffer, ai_name)
+                collected_tokens.append(final)
+                yield {"type": "token", "content": final}
 
             # Write complete exchange to session memory only after full response
             if collected_tokens:
