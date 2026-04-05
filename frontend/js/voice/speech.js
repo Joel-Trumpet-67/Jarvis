@@ -1,9 +1,11 @@
 /**
  * speech.js — Voice input via Web Speech API.
  *
- * One-shot mode: click → listen → silence detected → auto-submit.
- * Interim transcripts show in the input field while speaking.
- * Clicking the mic button while listening cancels the session.
+ * Uses continuous mode so it doesn't cut off early.
+ * A fresh SpeechRecognition instance is created each session (Chrome
+ * silently fails if you call .start() on a reused instance).
+ *
+ * Silence detection: if no new words arrive for SILENCE_MS, auto-submit.
  *
  * Exposed as: EigenSpeech
  *   .init()    — call once at boot
@@ -16,18 +18,21 @@ const EigenSpeech = (() => {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  let _recognition  = null;
-  let _listening    = false;   // currently running a recognition session
-  let _suspended    = false;   // suppressed while TTS is playing
-  let _supported    = false;
-  let _finalText    = '';      // accumulates confirmed words
+  const SILENCE_MS = 1800; // submit after this many ms with no new words
 
-  // ── DOM refs (set in init) ──────────────────────────────────────────
+  let _recognition  = null;
+  let _listening    = false;
+  let _suspended    = false;
+  let _supported    = false;
+  let _finalText    = '';
+  let _silenceTimer = null;
+
+  // ── DOM refs ────────────────────────────────────────────────────────
   let _micBtn    = null;
   let _micStatus = null;
   let _input     = null;
 
-  // ── Setup ───────────────────────────────────────────────────────────
+  // ── Init ────────────────────────────────────────────────────────────
 
   function init() {
     _micBtn    = document.getElementById('micBtn');
@@ -35,7 +40,7 @@ const EigenSpeech = (() => {
     _input     = document.getElementById('terminalInput');
 
     if (!SpeechRecognition) {
-      _setStatus('MIC: N/A');
+      _setStatus('N/A');
       if (_micBtn) {
         _micBtn.disabled = true;
         _micBtn.title    = 'Speech recognition not supported in this browser.';
@@ -44,137 +49,161 @@ const EigenSpeech = (() => {
     }
 
     _supported = true;
-    _setStatus('MIC: IDLE');
+    _setStatus('IDLE');
 
-    _recognition = new SpeechRecognition();
-    _recognition.lang           = 'en-US';
-    _recognition.interimResults = true;
-    _recognition.maxAlternatives = 1;
-    _recognition.continuous     = false; // auto-stop on silence
-
-    _recognition.onstart = () => {
-      _listening = true;
-      _finalText = '';
-      _setStatus('MIC: LISTENING');
-      if (_micBtn) _micBtn.classList.add('active');
-      if (typeof EigenVisualizer !== 'undefined') EigenVisualizer.start();
-    };
-
-    _recognition.onresult = (e) => {
-      let interim = '';
-      _finalText  = '';
-
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          _finalText += t;
-        } else {
-          interim += t;
-        }
-      }
-
-      // Show live transcript in the input field
-      if (_input) _input.value = _finalText || interim;
-    };
-
-    _recognition.onend = () => {
-      _listening = false;
-      if (_micBtn) _micBtn.classList.remove('active');
-      if (typeof EigenVisualizer !== 'undefined') EigenVisualizer.stop();
-
-      if (_finalText.trim()) {
-        _setStatus('MIC: PROCESSING');
-        const text  = _finalText.trim();
-        _finalText  = '';
-        if (_input)  _input.value = '';
-
-        // Submit through the same pipeline as typed input
-        if (typeof EigenApp !== 'undefined') {
-          EigenApp.submitMessage(text);
-        }
-        _setStatus('MIC: IDLE');
-      } else {
-        _setStatus('MIC: IDLE');
-        if (_input) _input.value = '';
-      }
-    };
-
-    _recognition.onerror = (e) => {
-      _listening = false;
-      if (_micBtn) _micBtn.classList.remove('active');
-      if (typeof EigenVisualizer !== 'undefined') EigenVisualizer.stop();
-
-      switch (e.error) {
-        case 'not-allowed':
-        case 'permission-denied':
-          _setStatus('MIC: BLOCKED');
-          if (typeof EigenTerminal !== 'undefined') {
-            EigenTerminal.print(
-              'Microphone access denied. Allow it in your browser settings.',
-              'error'
-            );
-          }
-          break;
-        case 'no-speech':
-          _setStatus('MIC: IDLE');
-          break;
-        case 'aborted':
-          _setStatus('MIC: IDLE');
-          break;
-        default:
-          _setStatus('MIC: ERR');
-          console.warn('[EigenSpeech] error:', e.error);
-      }
-    };
-
-    // Wire mic button
-    if (_micBtn) {
-      _micBtn.addEventListener('click', toggle);
-    }
+    if (_micBtn) _micBtn.addEventListener('click', toggle);
   }
 
   // ── Controls ────────────────────────────────────────────────────────
 
   function toggle() {
     if (!_supported) return;
-    if (_listening) {
-      _stop();
-    } else if (!_suspended) {
-      _start();
-    }
+    if (_listening) _stop(true);   // manual stop → submit whatever we have
+    else if (!_suspended) _start();
   }
 
   function suspend() {
     _suspended = true;
-    if (_listening) _stop();
+    if (_listening) _stop(false);  // stop but don't submit
   }
 
   function resume() {
     _suspended = false;
   }
 
-  // ── Internals ───────────────────────────────────────────────────────
+  // ── Start — fresh instance every time ───────────────────────────────
 
   function _start() {
     if (!_supported || _listening) return;
+
+    // Always create a new instance — reusing one after onend breaks in Chrome
+    _recognition = new SpeechRecognition();
+    _recognition.lang            = 'en-US';
+    _recognition.interimResults  = true;
+    _recognition.maxAlternatives = 1;
+    _recognition.continuous      = true;  // don't cut off on short pauses
+
+    _recognition.onstart = () => {
+      _listening = true;
+      _finalText = '';
+      _setStatus('LISTENING');
+      if (_micBtn) _micBtn.classList.add('active');
+      if (typeof EigenVisualizer !== 'undefined') EigenVisualizer.start();
+    };
+
+    _recognition.onresult = (e) => {
+      let interim = '';
+      let newFinal = '';
+
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) newFinal += t;
+        else interim += t;
+      }
+
+      if (newFinal) _finalText += newFinal;
+
+      // Show live transcript
+      if (_input) _input.value = _finalText + interim;
+
+      // Reset silence timer every time words arrive
+      _resetSilenceTimer();
+    };
+
+    _recognition.onend = () => {
+      // onend fires when the recognizer stops for any reason.
+      // If _listening is still true it means it stopped by itself (network
+      // hiccup, browser-imposed limit, etc.) — restart it transparently.
+      if (_listening && !_suspended) {
+        try { _recognition.start(); } catch (_) {}
+        return;
+      }
+      _cleanup();
+    };
+
+    _recognition.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        _setStatus('BLOCKED');
+        if (typeof EigenTerminal !== 'undefined') {
+          EigenTerminal.print(
+            'Microphone access denied. Allow it in your browser settings.',
+            'error'
+          );
+        }
+        _listening = false;
+        _cleanup();
+        return;
+      }
+      // 'no-speech', 'aborted', 'network' etc. — just keep going or clean up
+      if (e.error !== 'aborted') {
+        console.warn('[EigenSpeech] error:', e.error);
+      }
+    };
+
     try {
       _recognition.start();
+      _resetSilenceTimer();
     } catch (err) {
-      // Can happen if recognition is mid-abort — ignore
       console.warn('[EigenSpeech] start error:', err.message);
     }
   }
 
-  function _stop() {
-    if (!_supported || !_listening) return;
-    try {
-      _recognition.stop(); // triggers onend
-    } catch (_) { /* ignore */ }
+  // ── Stop ─────────────────────────────────────────────────────────────
+
+  function _stop(submit) {
+    _listening = false;
+    _clearSilenceTimer();
+
+    try { _recognition && _recognition.stop(); } catch (_) {}
+
+    if (submit && _finalText.trim()) {
+      _submit(_finalText.trim());
+    } else {
+      _cleanup();
+    }
+  }
+
+  // ── Silence timer ────────────────────────────────────────────────────
+
+  function _resetSilenceTimer() {
+    _clearSilenceTimer();
+    _silenceTimer = setTimeout(() => {
+      // Silence detected — stop and submit
+      _stop(true);
+    }, SILENCE_MS);
+  }
+
+  function _clearSilenceTimer() {
+    if (_silenceTimer) { clearTimeout(_silenceTimer); _silenceTimer = null; }
+  }
+
+  // ── Submit + cleanup ─────────────────────────────────────────────────
+
+  function _submit(text) {
+    _finalText = '';
+    if (_input) _input.value = '';
+    _setStatus('PROCESSING');
+    _cleanupUI();
+
+    if (typeof EigenApp !== 'undefined') EigenApp.submitMessage(text);
+    _setStatus('IDLE');
+  }
+
+  function _cleanup() {
+    _finalText = '';
+    if (_input) _input.value = '';
+    _cleanupUI();
+    _setStatus('IDLE');
+  }
+
+  function _cleanupUI() {
+    if (_micBtn) _micBtn.classList.remove('active');
+    if (typeof EigenVisualizer !== 'undefined') EigenVisualizer.stop();
   }
 
   function _setStatus(text) {
     if (_micStatus) _micStatus.textContent = text;
-    window.EIGENFORM.micActive = text === 'MIC: LISTENING';
+    window.EIGENFORM.micActive = text === 'LISTENING';
   }
 
   return { init, toggle, suspend, resume };
