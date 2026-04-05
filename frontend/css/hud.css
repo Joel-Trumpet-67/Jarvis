@@ -158,7 +158,36 @@
   box-shadow:   0 0 8px rgba(255, 68, 68, 0.25);
 }
 
-/* Mic status states */
+/* Mic button */
+.hud-btn--mic {
+  border-color: rgba(0, 255, 204, 0.25);
+  color:        var(--text-hud);
+  min-width:    44px;
+}
+
+.hud-btn--mic:hover {
+  border-color: var(--accent);
+  color:        var(--text-rocky);
+}
+
+.hud-btn--mic.active {
+  border-color: var(--text-rocky);
+  color:        var(--text-rocky);
+  box-shadow:   0 0 10px var(--accent-glow);
+  animation:    micPulse 1.0s ease-in-out infinite;
+}
+
+.hud-btn--mic:disabled {
+  opacity: 0.3;
+  cursor:  not-allowed;
+}
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 6px  var(--accent-glow); }
+  50%       { box-shadow: 0 0 16px var(--accent-glow); }
+}
+
+/* Mic status label */
 #micStatus.listening {
   color:     var(--text-rocky);
   animation: statusPulse 1.2s ease-in-out infinite;

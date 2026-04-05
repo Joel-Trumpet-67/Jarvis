@@ -165,6 +165,15 @@ const EigenApp = (() => {
         }
       }
     });
+
+    // V key — toggle microphone (when not typing)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'v' || e.key === 'V') {
+        if (document.activeElement !== input) {
+          if (typeof EigenSpeech !== 'undefined') EigenSpeech.toggle();
+        }
+      }
+    });
   }
 
   /** Public boot function — called by main.js */
