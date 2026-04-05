@@ -43,25 +43,16 @@ def _sanitize(text: str, ai_name: str) -> str:
 def _build_messages(session_id: str, user_message: str, system_prompt: str) -> list:
     """
     Assemble the messages array for the model API.
-    Format: [system, identity_seed, ...history, user_message]
+    Format: [system, ...history, user_message]
 
-    The identity_seed is a pre-filled assistant message that locks in
-    the AI's name before any user conversation begins. This prevents
-    the model from defaulting to a trained identity like Jarvis.
+    System prompt is ALWAYS first. No injected assistant messages —
+    those were causing the formal "Sir" tone via identity seeding.
     """
-    ai_name  = CONFIG.get("ai_name", "Rocky")
-    user_name = CONFIG.get("user_name", "Sir")
     max_msgs = CONFIG.get("max_short_term_messages", 20)
     session  = get_session(session_id)
     history  = session.get_messages(max_count=max_msgs)
 
     messages = [{"role": "system", "content": system_prompt}]
-
-    # Identity seed — always inject before history so the model never loses its name
-    messages.append({
-        "role": "assistant",
-        "content": f"I am {ai_name}. Your personal assistant, {user_name}. Online and ready."
-    })
 
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
@@ -182,14 +173,12 @@ def stream_response(
                 token_buffer += token
                 clean = _sanitize(token_buffer, ai_name)
 
-                # Emit only the newly safe portion (keep last 20 chars buffered
-                # in case a bad pattern is still arriving across tokens)
+                # Emit safe portion, keep last 20 chars buffered to catch split patterns
                 if len(clean) > 20:
                     emit = clean[:-20]
                     token_buffer = clean[-20:]
                     collected_tokens.append(emit)
                     yield {"type": "token", "content": emit}
-                # else keep buffering
 
             # Flush remaining buffer
             if token_buffer:
@@ -197,7 +186,7 @@ def stream_response(
                 collected_tokens.append(final)
                 yield {"type": "token", "content": final}
 
-            # Write complete exchange to session memory only after full response
+            # Write complete exchange to session memory after full response
             if collected_tokens:
                 full_text = "".join(collected_tokens)
                 session.add_message("user", user_message)
@@ -213,7 +202,7 @@ def stream_response(
             yield {
                 "type":    "error",
                 "code":    "MODEL_OFFLINE",
-                "message": "My neural link appears to be offline, sir. Attempting reconnection.",
+                "message": "Can't reach the AI core. Check your connection.",
             }
             return
 
@@ -224,14 +213,14 @@ def stream_response(
             yield {
                 "type":    "error",
                 "code":    "MODEL_TIMEOUT",
-                "message": "The AI core is taking longer than expected, sir. Please try again.",
+                "message": "Response timed out. Try again.",
             }
             return
 
         except requests.exceptions.HTTPError as e:
             status = e.response.status_code if e.response else "unknown"
-            msg = "Invalid API key, sir — please check your settings." if status == 401 else \
-                  f"The model returned an unexpected response, sir. (HTTP {status})"
+            msg = "Invalid API key — check your settings." if status == 401 else \
+                  f"Unexpected response from the model. (HTTP {status})"
             yield {"type": "error", "code": "HTTP_ERROR", "message": msg}
             return
 
@@ -239,6 +228,6 @@ def stream_response(
             yield {
                 "type":    "error",
                 "code":    "UNKNOWN",
-                "message": f"Something went wrong on my end, sir. ({type(e).__name__})",
+                "message": f"Something went wrong. ({type(e).__name__})",
             }
             return

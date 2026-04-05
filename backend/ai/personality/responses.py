@@ -9,7 +9,7 @@ from backend.config import CONFIG
 
 
 def _name():
-    return CONFIG.get("user_name", "Sir")
+    return CONFIG.get("user_name", "")
 
 
 # --- Boot / startup ---
