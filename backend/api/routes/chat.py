@@ -16,6 +16,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 import json
+
 from flask import Blueprint, request, Response, stream_with_context
 
 from backend.ai.core.dispatcher import dispatch
@@ -24,6 +25,10 @@ from backend.api.routes.status import mark_model_reachable
 
 chat_bp = Blueprint("chat", __name__)
 
+
+# ---------------------------------------------------------------------------
+# Route
+# ---------------------------------------------------------------------------
 
 @chat_bp.route("/api/chat", methods=["POST"])
 def chat():
@@ -53,7 +58,7 @@ def chat():
     def generate():
         for event in dispatch(session_id, message, system_prompt):
             if event.get("type") == "done":
-                mark_model_reachable()  # Cache: we just got a response, we're online
+                mark_model_reachable()
             yield f"data: {json.dumps(event)}\n\n"
 
     return Response(

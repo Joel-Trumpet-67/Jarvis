@@ -32,8 +32,86 @@ const EigenClient = (() => {
    *   .onError(event)       — called on model error {code, message}
    *   .onInterrupted()      — called when stream was cancelled
    */
+  /**
+   * _tryCommand — Check if the message is a local computer command.
+   * If it matches, execute it and call onToken/onDone directly.
+   * Returns true if handled, false if the message should go to the AI.
+   */
+  function _tryCommand(message, callbacks) {
+    const { onToken, onDone } = callbacks;
+    const msg = message.toLowerCase().trim();
+
+    // YouTube: play / search
+    const ytPlay = /\b(?:play|stream|watch|search|find|put on)\b.{0,60}\b(?:youtube|yt)\b/i.test(message)
+                || /\b(?:youtube|yt)\b.{0,60}\b(?:play|search|find|watch)\b/i.test(message);
+
+    if (ytPlay) {
+      let query = null;
+      const patterns = [
+        /\bplay\s+(.+?)\s+on\s+(?:youtube|yt)/i,
+        /\bplay\s+(.+?)\s+(?:youtube|yt)/i,
+        /\bwatch\s+(.+?)\s+on\s+(?:youtube|yt)/i,
+        /\bstream\s+(.+?)\s+on\s+(?:youtube|yt)/i,
+        /\bsearch\s+(?:for\s+)?(.+?)\s+on\s+(?:youtube|yt)/i,
+        /\b(?:youtube|yt)\b[,\s]+(?:play|search\s+for|find)\s+(.+)/i,
+      ];
+      for (const pat of patterns) {
+        const m = message.match(pat);
+        if (m && m[1].trim()) { query = m[1].trim(); break; }
+      }
+
+      const url = query
+        ? `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
+        : 'https://www.youtube.com';
+      const reply = query ? `Opening YouTube — ${query}.` : 'Opening YouTube.';
+
+      window.open(url, '_blank');
+      if (onToken) onToken(reply);
+      if (onDone)  onDone();
+      return true;
+    }
+
+    // Open YouTube homepage
+    if (/\b(?:open|launch|go\s+to)\s+(?:youtube|yt)\b/i.test(message)) {
+      window.open('https://www.youtube.com', '_blank');
+      if (onToken) onToken('Opening YouTube.');
+      if (onDone)  onDone();
+      return true;
+    }
+
+    // Spotify: open playlist in desktop app
+    if (/\b(?:play|open|launch|start)\b.{0,30}\b(?:my\s+)?playlist\b/i.test(message)
+     || /\b(?:open|launch)\s+spotify\b/i.test(message)) {
+      window.open('spotify:playlist:4K92J71PPuxqvq8l8Q2tlO', '_blank');
+      if (onToken) onToken('Opening your playlist.');
+      if (onDone)  onDone();
+      return true;
+    }
+
+    // Web search: "google X", "search for X", "look up X", "search X"
+    const webSearch =
+      message.match(/\bgoogle\s+(?:for\s+)?(.+)/i) ||
+      message.match(/\bsearch\s+(?:the\s+web\s+)?(?:for\s+)?(.+?)(?:\s+online)?\s*$/i) ||
+      message.match(/\blook\s+up\s+(.+)/i) ||
+      message.match(/\bfind\s+(?:info(?:rmation)?\s+(?:on|about)\s+)(.+)/i);
+
+    if (webSearch) {
+      const query = webSearch[1].trim();
+      const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      window.open(url, '_blank');
+      if (onToken) onToken(`Searching — ${query}.`);
+      if (onDone)  onDone();
+      return true;
+    }
+
+    return false;
+  }
+
   async function streamChat(message, callbacks = {}) {
     const { onToken, onDone, onError, onInterrupted } = callbacks;
+
+    // Check for local commands before hitting the backend
+    if (_tryCommand(message, callbacks)) return;
 
     // Create a new AbortController for this request
     const controller = new AbortController();
@@ -93,6 +171,9 @@ const EigenClient = (() => {
               break;
             case 'interrupted':
               if (onInterrupted) onInterrupted();
+              break;
+            case 'command_executed':
+              if (callbacks.onCommandExecuted) callbacks.onCommandExecuted(event);
               break;
           }
         }

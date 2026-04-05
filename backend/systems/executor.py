@@ -11,10 +11,22 @@ import json
 import webbrowser
 import urllib.parse
 
+from backend.systems.apps.launcher import launch_app as _launch_app
+
 
 # ---------------------------------------------------------------------------
 # Command handlers
 # ---------------------------------------------------------------------------
+
+def _open_app(data: dict) -> str:
+    name = data.get("name", "").strip()
+    if not name:
+        return "No app name provided."
+    ok, msg = _launch_app(name)
+    if not ok:
+        return f"I don't know how to open '{name}'."
+    return msg
+
 
 def _open_url(data: dict) -> str:
     url = data.get("url", "").strip()
@@ -41,6 +53,7 @@ def _search_youtube(data: dict) -> str:
 # ---------------------------------------------------------------------------
 
 _ACTIONS = {
+    "open_app":       _open_app,
     "open_url":       _open_url,
     "search_youtube": _search_youtube,
 }
@@ -52,6 +65,26 @@ _ACTIONS = {
 # ---------------------------------------------------------------------------
 
 TOOL_DEFINITIONS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "open_app",
+            "description": (
+                "Open a desktop application by name. Use this when the user wants "
+                "to launch an app like Notepad, Calculator, Chrome, Spotify, etc."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The app name, e.g. 'notepad', 'calculator', 'chrome'",
+                    }
+                },
+                "required": ["name"],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {

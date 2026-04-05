@@ -1,98 +1,206 @@
 """
 dispatcher.py — Intent router for EIGENFORM.
 
-Every message comes through here. The flow:
+Checks the message against command patterns BEFORE touching the AI model.
+If it matches a command, it executes directly and returns Rocky's confirmation.
+If nothing matches, it falls through to the AI for normal conversation.
 
-  1. Send the message to the AI model (via engine.stream_response)
-  2. Buffer the full response silently
-  3. Check if the response is a JSON command
-       YES → execute the command, stream back a short confirmation
-       NO  → stream the buffered text to the frontend normally
-
-This lets Rocky decide when to act vs. when to speak, based on the
-tool instructions in the system prompt.
+This means commands are 100% reliable — the model's RLHF training never
+gets a chance to refuse or explain limitations.
 """
 
 import re
 
-from backend.ai.core.engine import stream_response
-from backend.systems.executor import handle_command, execute_tool_call
+from backend.systems.executor import execute_tool_call
+from backend.systems.apps.registry import APPS as _APP_REGISTRY
 
-# Keywords that suggest the model refused to act when it should have run a command
-_REFUSAL_PATTERNS = [
-    r"i can'?t (open|play|launch|search|access|browse)",
-    r"i'?m unable to (open|play|launch|search|access|browse)",
-    r"i don'?t have (the ability|access) to (open|play|launch|browse)",
-    r"i cannot (open|play|launch|search|access|browse)",
+
+# ---------------------------------------------------------------------------
+# Command pattern registry
+# Each entry defines:
+#   patterns  — regex list; first match wins
+#   tool      — name matching an entry in executor._ACTIONS
+#   extract   — callable(message) -> args dict passed to the tool
+# ---------------------------------------------------------------------------
+
+def _extract_youtube_query(message: str) -> dict:
+    """Pull the search term out of a YouTube request."""
+    msg = message.strip()
+
+    patterns = [
+        r'play\s+(.+?)\s+on\s+(?:youtube|yt)\s*$',
+        r'play\s+(.+?)\s+(?:youtube|yt)',
+        r'(?:search|find)\s+(?:for\s+)?(.+?)\s+on\s+(?:youtube|yt)',
+        r'(?:youtube|yt)\s+(?:search\s+for|search|find|play)\s+(.+)',
+        r'(?:open|launch|go\s+to)\s+(?:youtube|yt)\s+(?:and\s+)?(?:play|search\s+for|search|find)\s+(.+)',
+        r'(?:put\s+on|stream|watch)\s+(.+?)\s+on\s+(?:youtube|yt)',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, msg, re.IGNORECASE)
+        if match:
+            query = match.group(1).strip()
+            if query:
+                return {"query": query}
+
+    # "Open YouTube" / "Launch YouTube" with no query
+    return {"query": None}
+
+
+def _extract_app_name(message: str) -> dict:
+    """
+    Pull the app name from a launch request and return the best registry match.
+    E.g. "open notepad" → {"name": "notepad"}
+         "launch vs code" → {"name": "vs code"}
+    """
+    msg = message.lower().strip()
+
+    # Strip the verb prefix
+    for verb in ("open", "launch", "start", "run", "fire up"):
+        if msg.startswith(verb):
+            candidate = msg[len(verb):].strip()
+            # Direct registry hit
+            if candidate in _APP_REGISTRY:
+                return {"name": candidate}
+            # Try dropping trailing words like "for me", "please", "app"
+            for suffix in (" app", " please", " for me", " now"):
+                if candidate.endswith(suffix):
+                    trimmed = candidate[: -len(suffix)].strip()
+                    if trimmed in _APP_REGISTRY:
+                        return {"name": trimmed}
+            # Return the raw candidate — launcher will try it
+            return {"name": candidate}
+
+    return {"name": msg}
+
+
+def _extract_url(message: str) -> dict:
+    """Extract a URL from the message, or map common site names."""
+    sites = {
+        "google":    "https://www.google.com",
+        "youtube":   "https://www.youtube.com",
+        "github":    "https://www.github.com",
+        "reddit":    "https://www.reddit.com",
+        "twitter":   "https://www.twitter.com",
+        "x":         "https://www.x.com",
+        "facebook":  "https://www.facebook.com",
+        "instagram": "https://www.instagram.com",
+        "netflix":   "https://www.netflix.com",
+        "spotify":   "https://www.spotify.com",
+        "twitch":    "https://www.twitch.tv",
+    }
+
+    msg = message.lower()
+
+    # Check for an explicit URL
+    url_match = re.search(r'https?://\S+', message, re.IGNORECASE)
+    if url_match:
+        return {"url": url_match.group(0)}
+
+    # Match "open <site>"
+    open_match = re.search(r'open\s+(\w+)', msg)
+    if open_match:
+        site = open_match.group(1).lower()
+        if site in sites:
+            return {"url": sites[site]}
+
+    return {"url": "https://www.google.com"}
+
+
+# Build a regex that matches any known app name from the registry.
+# e.g. "notepad|calculator|calc|vs code|..."
+_APP_NAMES_PATTERN = "|".join(
+    re.escape(name) for name in sorted(_APP_REGISTRY.keys(), key=len, reverse=True)
+)
+
+
+_COMMANDS = [
+    # ── App launcher ──────────────────────────────────────────────────────────
+    {
+        "name": "open_app",
+        "patterns": [
+            rf'\b(?:open|launch|start|run)\s+(?:{_APP_NAMES_PATTERN})\b',
+            rf'\bfire\s+up\s+(?:{_APP_NAMES_PATTERN})\b',
+        ],
+        "tool":    "open_app",
+        "extract": _extract_app_name,
+    },
+
+    # ── YouTube ───────────────────────────────────────────────────────────────
+    {
+        "name": "search_youtube",
+        "patterns": [
+            r'\b(?:play|stream|watch|put\s+on)\b.{1,60}\b(?:youtube|yt)\b',
+            r'\b(?:youtube|yt)\b.{0,60}\b(?:play|search|find|watch)\b',
+            r'\bsearch\b.{0,30}\b(?:youtube|yt)\b',
+            r'\b(?:find|search\s+for)\b.{1,60}\b(?:on\s+)?(?:youtube|yt)\b',
+        ],
+        "tool":    "search_youtube",
+        "extract": _extract_youtube_query,
+    },
+    {
+        "name": "open_youtube",
+        "patterns": [
+            r'\b(?:open|launch|go\s+to)\s+(?:youtube|yt)\b',
+        ],
+        "tool":    "open_url",
+        "extract": lambda msg: {"url": "https://www.youtube.com"},
+    },
+    {
+        "name": "open_site",
+        "patterns": [
+            r'\bopen\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|spotify|twitch|x\.com)\b',
+            r'\bgo\s+to\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|spotify|twitch)\b',
+        ],
+        "tool":    "open_url",
+        "extract": _extract_url,
+    },
 ]
 
-# If these words are also in the message, it was likely a command request
-_ACTION_KEYWORDS = ["youtube", "open", "play", "search", "launch", "browser", "website", "url"]
+
+def _match(message: str):
+    """Return the first matching command entry, or None."""
+    lowered = message.lower()
+    for cmd in _COMMANDS:
+        for pattern in cmd["patterns"]:
+            if re.search(pattern, lowered):
+                return cmd
+    return None
 
 
-def _is_bad_refusal(user_message: str, response: str) -> bool:
-    """Returns True if the model refused to act when it should have used a command."""
-    resp_lower = response.lower()
-    msg_lower  = user_message.lower()
-    has_action = any(kw in msg_lower for kw in _ACTION_KEYWORDS)
-    if not has_action:
-        return False
-    return any(re.search(p, resp_lower) for p in _REFUSAL_PATTERNS)
-
+# ---------------------------------------------------------------------------
+# Public interface
+# ---------------------------------------------------------------------------
 
 def dispatch(session_id: str, message: str, system_prompt: str):
     """
-    Routes a message through the AI engine with command detection.
-    Returns a generator of SSE-compatible event dicts.
+    Routes a message to a direct command handler or the AI engine.
+    Returns a generator of SSE event dicts.
     """
-    return _buffered_dispatch(session_id, message, system_prompt)
+    cmd = _match(message)
+    if cmd:
+        return _run_command(cmd, message)
+
+    from backend.ai.core.engine import stream_response
+    return stream_response(session_id, message, system_prompt)
 
 
-def _buffered_dispatch(session_id: str, message: str, system_prompt: str):  # noqa: C901
-    """
-    Buffers the full model response before yielding anything to the frontend.
+def _run_command(cmd: dict, message: str):
+    """Execute a matched command and yield a confirmation token."""
+    args = cmd["extract"](message)
+    executed, confirmation = execute_tool_call(cmd["tool"], args)
 
-    - If the response is a JSON command → execute it, yield confirmation
-    - If the response is normal text    → replay tokens to the frontend
-    """
-    tokens   = []
-    metadata = {}
+    # Emit a structured command_executed event for the frontend to style
+    yield {
+        "type":    "command_executed",
+        "command": cmd["name"],
+        "args":    args,
+        "ok":      executed,
+    }
 
-    for event in stream_response(session_id, message, system_prompt):
-        etype = event.get("type")
+    if executed and confirmation:
+        yield {"type": "token", "content": confirmation}
+    elif not executed:
+        yield {"type": "token", "content": "Couldn't run that command."}
 
-        # Native function call from the model — execute immediately
-        if etype == "tool_call":
-            executed, confirmation = execute_tool_call(event["name"], event.get("args", {}))
-            if executed and confirmation:
-                yield {"type": "token", "content": confirmation}
-            continue
-
-        if etype == "token":
-            tokens.append(event.get("content", ""))
-
-        elif etype in ("error", "interrupted"):
-            metadata = event
-            break
-
-        elif etype == "done":
-            break
-
-    if metadata:
-        yield metadata
-        return
-
-    # Fallback: check if the model outputted a raw JSON command instead of using tool calling
-    full_response = "".join(tokens)
-    if full_response.strip().startswith("{"):
-        executed, confirmation = handle_command(full_response)
-        if executed:
-            if confirmation:
-                yield {"type": "token", "content": confirmation}
-            yield {"type": "done"}
-            return
-
-    # Normal text response
-    for token in tokens:
-        yield {"type": "token", "content": token}
     yield {"type": "done"}

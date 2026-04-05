@@ -70,5 +70,15 @@ const EigenHUD = (() => {
     clearInterval(_statusInterval);
   }
 
-  return { start, stop, setStatus };
+  // ── Command flash ─────────────────────────────────────────────
+
+  function flashCommand(commandName) {
+    // Brief visual pulse on the status ring when a backend command executes
+    const ring = document.getElementById('statusRing');
+    if (!ring) return;
+    ring.classList.add('command-flash');
+    setTimeout(() => ring.classList.remove('command-flash'), 600);
+  }
+
+  return { start, stop, setStatus, flashCommand };
 })();

@@ -106,6 +106,11 @@ const EigenApp = (() => {
           EigenSynthesis.speak('Stopped.');
         }
       },
+
+      onCommandExecuted(event) {
+        // Visual indicator that a backend command ran (app launcher, etc.)
+        if (typeof EigenHUD !== 'undefined') EigenHUD.flashCommand(event.command);
+      },
     });
   }
 
