@@ -58,14 +58,14 @@ SCENES: dict[str, dict] = {
         ],
         "greeting": "Welcome home. Setting things up.",
         "actions": [
-            # 1. Spotify — start music immediately, snap to right strip of primary
+            # 1. Spotify — start music immediately, snap to right half of primary
             {"type": "spotify_playlist", "id": "4K92J71PPuxqvq8l8Q2tlO"},
-            {"type": "snap",   "title": "Spotify",  "position": "right-1/3",
+            {"type": "snap",   "title": "Spotify",  "position": "right",
                                 "monitor": 0, "wait": 6},
 
-            # 2. VS Code with EIGENFORM project — snap to left 2/3 of primary
+            # 2. VS Code with EIGENFORM project — snap to left half of primary
             {"type": "open_app", "name": "eigenform"},
-            {"type": "snap",   "title": "Visual Studio Code", "position": "left-2/3",
+            {"type": "snap",   "title": "Visual Studio Code", "position": "left",
                                 "monitor": 0, "wait": 10},
 
             # 3. Claude desktop app — left half of secondary monitor
