@@ -154,7 +154,8 @@ def stream_response(
             response.raise_for_status()
 
             collected_tokens = []
-            token_buffer = ""  # Rolling buffer for cross-token sanitization
+            token_buffer = ""   # Rolling buffer for sanitization
+            thinking = False    # True while inside <think>...</think> block
 
             for raw_line in response.iter_lines():
                 # Hard interrupt check on every token
@@ -169,8 +170,18 @@ def stream_response(
                 if not token:
                     continue
 
-                # Accumulate into buffer, sanitize the whole buffer each time
+                # Suppress <think>...</think> reasoning blocks (Qwen3 etc.)
                 token_buffer += token
+                if "<think>" in token_buffer:
+                    thinking = True
+                if thinking:
+                    if "</think>" in token_buffer:
+                        # Discard everything up to and including </think>
+                        token_buffer = token_buffer.split("</think>", 1)[1]
+                        thinking = False
+                    else:
+                        continue  # Still inside thinking block, suppress
+
                 clean = _sanitize(token_buffer, ai_name)
 
                 # Emit safe portion, keep last 20 chars buffered to catch split patterns
@@ -181,7 +192,7 @@ def stream_response(
                     yield {"type": "token", "content": emit}
 
             # Flush remaining buffer
-            if token_buffer:
+            if token_buffer and not thinking:
                 final = _sanitize(token_buffer, ai_name)
                 collected_tokens.append(final)
                 yield {"type": "token", "content": final}

@@ -20,6 +20,7 @@ from flask import Blueprint, request, Response, stream_with_context
 
 from backend.ai.core.engine import stream_response
 from backend.ai.personality.rocky import get_system_prompt
+from backend.api.routes.status import mark_model_reachable
 
 chat_bp = Blueprint("chat", __name__)
 
@@ -51,6 +52,8 @@ def chat():
 
     def generate():
         for event in stream_response(session_id, message, system_prompt):
+            if event.get("type") == "done":
+                mark_model_reachable()  # Cache: we just got a response, we're online
             yield f"data: {json.dumps(event)}\n\n"
 
     return Response(
