@@ -17,7 +17,7 @@ const EigenAnimations = (() => {
     '// Voice interface.................... STANDBY',
     '// All systems nominal.',
     '',
-    'Good to have you back, sir.',
+    'Online. Ready, Sir.',
   ];
 
   const BOOT_LINE_DELAY_MS = 160;

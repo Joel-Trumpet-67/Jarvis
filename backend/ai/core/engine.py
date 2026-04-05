@@ -20,6 +20,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
+import re
 import json
 import time
 import requests
@@ -27,6 +28,17 @@ from typing import Generator
 
 from backend.config import CONFIG
 from backend.ai.memory.short_term import get_session
+
+
+def _sanitize_token(token: str, ai_name: str) -> str:
+    """
+    Last-resort filter: if the model slips and says Jarvis or J.A.R.V.I.S.,
+    replace it with the configured AI name before the token reaches the frontend.
+    """
+    token = re.sub(r'J\.A\.R\.V\.I\.S\.', ai_name, token)
+    token = re.sub(r'\bJARVIS\b', ai_name, token, flags=re.IGNORECASE)
+    token = re.sub(r'\bJarvis\b', ai_name, token)
+    return token
 
 
 def _build_messages(session_id: str, user_message: str, system_prompt: str) -> list:
@@ -93,8 +105,9 @@ def stream_response(
       {"type": "interrupted"}
       {"type": "error",       "code": "...", "message": "..."}
     """
-    session = get_session(session_id)
+    session  = get_session(session_id)
     session.clear_cancel()
+    ai_name  = CONFIG.get("ai_name", "Rocky")
 
     messages   = _build_messages(session_id, user_message, system_prompt)
     api_format = CONFIG.get("api_format", "ollama")
@@ -151,6 +164,7 @@ def stream_response(
 
                 token = token_extractor(raw_line)
                 if token:
+                    token = _sanitize_token(token, ai_name)
                     collected_tokens.append(token)
                     yield {"type": "token", "content": token}
 
