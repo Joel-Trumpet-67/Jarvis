@@ -15,7 +15,7 @@
 
 ## Phase 1 — Skeleton: Get It Talking
 
-**Goal:** Type a message in the browser, receive a streamed Jarvis response. No voice, no apps. Just the core loop working end-to-end.
+**Goal:** Type a message in the browser, receive a streamed Rocky response. No voice, no apps. Just the core loop working end-to-end.
 
 **Estimated time:** 1–2 days
 
@@ -39,12 +39,12 @@
 
 ---
 
-### Task 1.3 — `backend/ai/personality/jarvis.py`
+### Task 1.3 — `backend/ai/personality/rocky.py`
 **Difficulty:** ★☆☆☆☆
 **Depends on:** 1.2
-**What you're doing:** A Python file that returns the Jarvis system prompt string. Reads `user_name` from CONFIG.
+**What you're doing:** A Python file that returns the Rocky system prompt string. Reads `user_name` from CONFIG.
 **Risk:** None. This is just a string.
-**Notes:** This is the most important string in the entire project. Take time to write it well. A good system prompt shapes everything Jarvis says.
+**Notes:** This is the most important string in the entire project. Take time to write it well. A good system prompt shapes everything Rocky says.
 
 ---
 
@@ -121,7 +121,7 @@
 **Depends on:** 1.11
 **What you're doing:** Base styles — color variables, font, layout. Terminal window with scrollable output and sticky input at bottom.
 **Risk:** Low. CSS scrollbar behavior can be fiddly across browsers.
-**Notes:** Define all colors as CSS custom properties (`--text-jarvis` etc.) in `main.css`. This makes theming changes instant across the whole app.
+**Notes:** Define all colors as CSS custom properties (`--text-rocky` etc.) in `main.css`. This makes theming changes instant across the whole app.
 
 ---
 
@@ -146,7 +146,7 @@
 ### Task 1.15 — `frontend/js/terminal/terminal.js`
 **Difficulty:** ★★☆☆☆
 **Depends on:** 1.13
-**What you're doing:** Functions to append lines to the terminal DOM. Line types: `user`, `jarvis`, `system`, `error`. Handles streaming token append (finds the active Jarvis line and appends to it).
+**What you're doing:** Functions to append lines to the terminal DOM. Line types: `user`, `rocky`, `system`, `error`. Handles streaming token append (finds the active Rocky line and appends to it).
 **Risk:** Low. DOM manipulation.
 **Notes:** Auto-scroll to bottom on every new line/token. This is easy to forget and annoying when missing.
 
@@ -161,10 +161,10 @@
 ---
 
 ### ✅ MILESTONE 1 — Core Loop Working
-**Test:** Open browser → type a message → Jarvis streams a response token by token → terminal displays it.
+**Test:** Open browser → type a message → Rocky streams a response token by token → terminal displays it.
 **Pass criteria:**
 - Tokens arrive and append in real time (not all at once)
-- Jarvis sounds like Jarvis (personality prompt working)
+- Rocky sounds like Rocky (personality prompt working)
 - `/api/status` returns `{"model_reachable": true}`
 - Refreshing the page restores conversation history
 
@@ -172,7 +172,7 @@
 
 ## Phase 2 — Voice
 
-**Goal:** Speak to Jarvis using the wake word. Hear it respond out loud.
+**Goal:** Speak to Rocky using the wake word. Hear it respond out loud.
 
 **Estimated time:** 1 day
 
@@ -181,7 +181,7 @@
 ### Task 2.1 — `frontend/js/voice/speech.js`
 **Difficulty:** ★★★★☆
 **Depends on:** Milestone 1, 1.13, 1.14
-**What you're doing:** Implements the wake word + STT state machine. Always-on recognition listening for "hey jarvis". On detection: switches to active listening, shows interim ghost text, submits on final result.
+**What you're doing:** Implements the wake word + STT state machine. Always-on recognition listening for "hey rocky". On detection: switches to active listening, shows interim ghost text, submits on final result.
 **Risk:** High. Web Speech API is browser-specific (Chrome/Edge only), behavior varies, and the interim/final event timing is inconsistent. The echo suppression logic (pausing STT while TTS speaks) requires careful coordination with synthesis.js.
 **Notes:** Test wake word detection in a quiet room first. The API is surprisingly sensitive. You may need to tune the wake word or use a shorter phrase. Always check `window.SpeechRecognition || window.webkitSpeechRecognition` for browser support and show a warning if absent.
 
@@ -205,7 +205,7 @@
 ---
 
 ### ✅ MILESTONE 2 — Full Voice Loop Working
-**Test:** Say "Hey Jarvis" → speak a question → Jarvis responds by voice while printing to terminal.
+**Test:** Say "Hey Rocky" → speak a question → Rocky responds by voice while printing to terminal.
 **Pass criteria:**
 - Wake word reliably activates STT
 - Interim text appears as grey ghost in input box
@@ -234,7 +234,7 @@
 ### Task 3.2 — Interrupt: Frontend AbortController + TTS cancel
 **Difficulty:** ★★☆☆☆
 **Depends on:** 3.1, 2.2
-**What you're doing:** Wire Escape key and interrupt button to: `speechSynthesis.cancel()`, abort the fetch stream, POST `/api/interrupt`, print "Of course, sir." in terminal and speak it.
+**What you're doing:** Wire Escape key and interrupt button to: `speechSynthesis.cancel()`, abort the fetch stream, POST `/api/interrupt`, print "Stopped." in terminal and speak it.
 **Risk:** Low.
 
 ---
@@ -248,7 +248,7 @@
 ---
 
 ### ✅ MILESTONE 3 — Resilient Session
-**Test:** Jarvis is mid-response → press Escape → everything stops → "Of course, sir." → refresh page → conversation history re-appears.
+**Test:** Rocky is mid-response → press Escape → everything stops → "Stopped." → refresh page → conversation history re-appears.
 
 ---
 
@@ -320,7 +320,7 @@
 ---
 
 ### ✅ MILESTONE 4 — App Control Working
-**Test:** "Hey Jarvis, open Notepad" → Notepad opens → Jarvis confirms. "Hey Jarvis, what's 2 + 2?" → Jarvis answers conversationally (not tries to open an app).
+**Test:** "Hey Rocky, open Notepad" → Notepad opens → Rocky confirms. "Hey Rocky, what's 2 + 2?" → Rocky answers conversationally (not tries to open an app).
 **Pass criteria:**
 - Registered apps launch on voice/text command
 - Unregistered apps get an elegant refusal
@@ -331,7 +331,7 @@
 
 ## Phase 5 — Long-Term Memory
 
-**Goal:** Jarvis remembers facts you tell it across sessions.
+**Goal:** Rocky remembers facts you tell it across sessions.
 
 **Estimated time:** 1 day
 
@@ -363,7 +363,7 @@
 ---
 
 ### ✅ MILESTONE 5 — Memory Working
-**Test:** Tell Jarvis "Remember that I prefer dark mode." Restart Flask. Ask "Do you remember my display preferences?" → Jarvis knows.
+**Test:** Tell Rocky "Remember that I prefer dark mode." Restart Flask. Ask "Do you remember my display preferences?" → Rocky knows.
 **Pass criteria:**
 - Fact stored in `long_term.json` with correct tags
 - Fact retrieved and injected in next session
@@ -387,7 +387,7 @@
 - HUD corner panels, status ring, bottom bar
 - Boot sequence keyframes
 - Scanline CSS overlay
-- Glow effects on input and Jarvis lines
+- Glow effects on input and Rocky lines
 - Typing cursor animation
 **Risk:** Medium. CSS animations are easy to write badly — jank, repaints, layout thrash. Use `transform` and `opacity` only for animations (GPU composited). Avoid animating `width`, `height`, `top`, `left`.
 
@@ -426,8 +426,8 @@
 
 ---
 
-### ✅ MILESTONE 6 — Full Jarvis Experience
-**Test:** Cold-start the app → boot animation plays → HUD shows clock and status → say "Hey Jarvis" → visualizer activates → response streams with typing effect → scanlines visible throughout.
+### ✅ MILESTONE 6 — Full Rocky Experience
+**Test:** Cold-start the app → boot animation plays → HUD shows clock and status → say "Hey Rocky" → visualizer activates → response streams with typing effect → scanlines visible throughout.
 **Pass criteria:**
 - Boot animation plays on fresh load
 - All HUD elements present and live
@@ -459,7 +459,7 @@
 ### Task 7.2 — Web Search (`systems/web/`)
 **Difficulty:** ★★☆☆☆
 **Depends on:** Milestone 4
-**What you're doing:** Use DuckDuckGo Instant Answer API (free, no key) or a search scraper. Return top 3 results as text. Jarvis summarizes them.
+**What you're doing:** Use DuckDuckGo Instant Answer API (free, no key) or a search scraper. Return top 3 results as text. Rocky summarizes them.
 **Risk:** Low. Web scraping can break if the target site changes HTML.
 **Notes:** DuckDuckGo Instant Answer API: `https://api.duckduckgo.com/?q={query}&format=json` — returns structured data for many queries without scraping.
 
@@ -481,8 +481,8 @@
 
 ---
 
-### ✅ MILESTONE 7 — Fully Expanded Jarvis
-**Test:** "Hey Jarvis, search for the latest news on AI, turn the volume down to 30%, then open Chrome."
+### ✅ MILESTONE 7 — Fully Expanded Rocky
+**Test:** "Hey Rocky, search for the latest news on AI, turn the volume down to 30%, then open Chrome."
 **Pass criteria:**
 - Each step executes in order
 - OS commands take effect
@@ -496,7 +496,7 @@
 ```
 1.1 settings.json
  └─ 1.2 config.py
-     ├─ 1.3 jarvis.py
+     ├─ 1.3 rocky.py
      ├─ 1.4 responses.py
      ├─ 1.5 short_term.py ──────────────────────────────┐
      │   └─ 1.6 engine.py                                │

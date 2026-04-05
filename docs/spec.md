@@ -1,4 +1,4 @@
-# EIGENFORM — JARVIS AI Assistant
+# EIGENFORM — Rocky AI Assistant
 ## Production Specification Document
 **Last Updated:** 2026-04-02
 **Status:** Architecture Complete — Ready for Implementation
@@ -46,9 +46,9 @@ EIGENFORM is a locally-running, Iron Man-style AI assistant (J.A.R.V.I.S.) with 
 |----------|------|
 | P0 | Talk to the AI and receive streaming spoken + printed responses |
 | P0 | Open applications by voice or text command |
-| P0 | Jarvis personality — formal, British, intelligent, dry humor |
-| P0 | Hard interrupt — cancel Jarvis mid-response at any time |
-| P1 | Wake word activation ("Hey Jarvis") with live interim transcript |
+| P0 | Rocky personality — direct, sharp, engineer-minded, dry humor |
+| P0 | Hard interrupt — cancel Rocky mid-response at any time |
+| P1 | Wake word activation ("Hey Rocky") with live interim transcript |
 | P1 | Remember past conversations (short + long-term memory) |
 | P1 | Terminal-style HUD interface with boot animation and scanlines |
 | P1 | Session state resilience — survive browser refresh |
@@ -105,7 +105,7 @@ EIGENFORM/
 │   │   │   └── context.py             # Assembles context: relevant memories + history
 │   │   │
 │   │   ├── personality/
-│   │   │   ├── jarvis.py              # System prompt, tone rules, character constraints
+│   │   │   ├── rocky.py              # System prompt, tone rules, character constraints
 │   │   │   └── responses.py           # Boot lines, error quips, idle acknowledgements
 │   │   │
 │   │   ├── nlp/
@@ -278,7 +278,7 @@ EIGENFORM/
       ↓
 8. [client.js] — receives SSE tokens → passes to terminal.js AND synthesis.js
       ↓
-9. [terminal.js] — appends tokens to Jarvis output line in real time
+9. [terminal.js] — appends tokens to Rocky output line in real time
       ↓
 10. [synthesis.js] — accumulates tokens into buffer
                    → on sentence boundary → dispatches SpeechSynthesisUtterance
@@ -421,7 +421,7 @@ State machine:
   LISTENING ──[final result]───▶ SUBMITTING
   SUBMITTING ──[response done]──▶ IDLE
 
-Wake word: "Hey Jarvis" (configurable, detected via simple string match on interim)
+Wake word: "Hey Rocky" (configurable, detected via simple string match on interim)
 Hotkey alternative: hold Space = enter LISTENING, release = submit final transcript
 
 Interim results:
@@ -438,7 +438,7 @@ Final results:
 Echo cancellation:
   - STT is SUSPENDED while SpeechSynthesis is speaking
   - Re-activates 500ms after TTS utterance queue empties
-  - Prevents Jarvis's own voice triggering wake word
+  - Prevents Rocky's own voice triggering wake word
 ```
 
 ### TTS — Sentence-Buffered Output
@@ -466,7 +466,7 @@ Hard interrupt cancels all in-flight operations simultaneously.
    a. synthesis.js → window.speechSynthesis.cancel()  (stops TTS immediately)
    b. client.js → abortController.abort()             (closes EventSource/fetch)
    c. state.js → set mode = IDLE
-   d. terminal.js → mark current Jarvis line as [INTERRUPTED] in grey
+   d. terminal.js → mark current Rocky line as [INTERRUPTED] in grey
 
 2. Frontend → POST /api/interrupt with session_id
 
@@ -480,7 +480,7 @@ Hard interrupt cancels all in-flight operations simultaneously.
 4. Backend → responds with interrupt_ack
 
 5. Frontend:
-   a. Jarvis prints in-character acknowledgement: "Of course, sir."
+   a. Rocky prints in-character acknowledgement: "Stopped."
    b. synthesis.js speaks it
    c. STT returns to IDLE/wake-word listening state
 ```
@@ -519,7 +519,7 @@ class SessionState:
 - **Storage:** `data/memory/long_term.json` with `threading.Lock`
 - **Write safety:** Atomic — write to temp file, then `os.replace()` (no partial-write corruption)
 - **Corruption recovery:** On `JSONDecodeError`, load backup copy from `data/memory/long_term.bak.json`
-- **Trigger:** Jarvis detects "remember that..." pattern OR stores key facts autonomously
+- **Trigger:** Rocky detects "remember that..." pattern OR stores key facts autonomously
 - **Schema:**
 ```json
 {
@@ -591,7 +591,7 @@ if (session.messages.length > 0) {
 |-------|---------------|----------------|
 | App boots | Create new session if none exists | GET /api/session, render history |
 | Message sent | Append to short_term | Render user line |
-| Response complete | Append assistant message | Render Jarvis line |
+| Response complete | Append assistant message | Render Rocky line |
 | `/clear` | Clear short_term messages | Clear terminal DOM |
 | Browser refresh | Session persists | Re-fetch and re-render |
 | Server restart | All sessions lost | Boot fresh |
@@ -629,7 +629,7 @@ def launch_app(app_name: str) -> str:
 
 ### Prompt Injection Mitigation
 
-The system prompt in `jarvis.py` includes explicit injection resistance:
+The system prompt in `rocky.py` includes explicit injection resistance:
 
 ```
 "You are J.A.R.V.I.S. You ONLY execute actions from your registered capability list.
@@ -735,7 +735,7 @@ long_term.json contains invalid JSON (crash during write)
 Dispatcher: no plugin scores ≥ 0.80, AI classifier returns unknown intent
   │
   └─ Route to conversation handler (engine.py) by default
-     Jarvis responds naturally — "I'm not sure I follow, sir. Could you rephrase?"
+     Rocky responds naturally — "I'm not sure I follow, sir. Could you rephrase?"
 ```
 
 ### App Not in Registry
@@ -744,7 +744,7 @@ Dispatcher: no plugin scores ≥ 0.80, AI classifier returns unknown intent
 Entity extracted: "open winamp"
 Registry lookup: not found
   │
-  └─ Jarvis responds: "I don't have Winamp registered, sir.
+  └─ Rocky responds: "I don't have Winamp registered, sir.
      You can add it to the app registry."
      (Never attempts to find the executable independently)
 ```
@@ -790,7 +790,7 @@ data: {"done": true, "session_id": "abc123"}
 {
   "session_id": "abc123",
   "messages": [
-    {"role": "user", "content": "Hello Jarvis", "timestamp": 1712000000},
+    {"role": "user", "content": "Hello Rocky", "timestamp": 1712000000},
     {"role": "assistant", "content": "Good evening, sir.", "timestamp": 1712000001}
   ]
 }
@@ -853,7 +853,7 @@ Aliases are stored as a second optional field in the registry:
 
 ## 18. Personality System
 
-### System Prompt (`ai/personality/jarvis.py`)
+### System Prompt (`ai/personality/rocky.py`)
 
 ```
 You are J.A.R.V.I.S. (Just A Rather Very Intelligent System), an AI assistant
@@ -895,7 +895,7 @@ Error quips (model offline):
 ```css
 --bg-primary:    #0a0e17;   /* Near-black background */
 --bg-secondary:  #0d1220;   /* Slightly lighter panels */
---text-jarvis:   #00d4ff;   /* Cyan — Jarvis output */
+--text-rocky:   #00d4ff;   /* Cyan — Rocky output */
 --text-user:     #ffffff;   /* White — user input */
 --text-system:   #ffb300;   /* Amber — system messages */
 --text-error:    #ff4444;   /* Red — errors */
@@ -928,7 +928,7 @@ Error quips (model offline):
 ```
 ┌─[EIGENFORM]──────────────────────[STATUS: ONLINE]─[HH:MM:SS]─┐
 │                                                                 │
-│  > Hey Jarvis, open Spotify                                    │
+│  > Hey Rocky, open Spotify                                    │
 │  ◈ Opening Spotify now, sir.                                   │
 │  > What's the weather like?                                    │
 │  ◈ I don't currently have weather access, sir. That            │
@@ -976,7 +976,7 @@ Handled entirely by `parser.js` — no backend call made.
   "voice_lang":               "en-GB",
   "voice_rate":               0.90,
   "voice_pitch":              0.85,
-  "wake_word":                "hey jarvis",
+  "wake_word":                "hey rocky",
   "always_listen":            false,
   "stt_silence_ms":           1500,
   "tts_resume_delay_ms":      500,
@@ -1006,7 +1006,7 @@ Handled entirely by `parser.js` — no backend call made.
 
 1. `data/config/settings.json`
 2. `backend/config.py`
-3. `backend/ai/personality/jarvis.py`
+3. `backend/ai/personality/rocky.py`
 4. `backend/ai/personality/responses.py`
 5. `backend/ai/memory/short_term.py`
 6. `backend/ai/core/engine.py` *(SSE streaming to model API)*
@@ -1021,16 +1021,16 @@ Handled entirely by `parser.js` — no backend call made.
 15. `frontend/js/terminal/terminal.js`
 16. `frontend/js/main.js` + `core/app.js`
 
-**Checkpoint:** Type in browser → streamed Jarvis response → works.
+**Checkpoint:** Type in browser → streamed Rocky response → works.
 
 ### Phase 2 — Voice
-*Goal: speak to Jarvis, hear it respond*
+*Goal: speak to Rocky, hear Rocky respond*
 
 17. `frontend/js/voice/speech.js` *(wake word + STT)*
 18. `frontend/js/voice/synthesis.js` *(sentence accumulator + TTS)*
 19. `frontend/js/terminal/history.js`
 
-**Checkpoint:** "Hey Jarvis" → speak → Jarvis responds by voice.
+**Checkpoint:** "Hey Rocky" → speak → Rocky responds by voice.
 
 ### Phase 3 — Interrupt + Session Sync
 *Goal: Escape cancels everything, refresh restores session*
@@ -1039,7 +1039,7 @@ Handled entirely by `parser.js` — no backend call made.
 21. `backend/api/routes/session.py` *(GET returns history)*
 22. `frontend/js/api/client.js` *(interrupt + session restore)*
 
-**Checkpoint:** Mid-response Escape → Jarvis stops. Refresh → history returns.
+**Checkpoint:** Mid-response Escape → Rocky stops. Refresh → history returns.
 
 ### Phase 4 — App Launcher + Dispatcher
 *Goal: "Open Chrome" actually opens Chrome*
@@ -1051,16 +1051,16 @@ Handled entirely by `parser.js` — no backend call made.
 27. `backend/systems/apps/launcher.py` + `registry.py` + `plugin.py`
 28. `backend/ai/core/dispatcher.py` *(hybrid routing)*
 
-**Checkpoint:** "Hey Jarvis, open Notepad" → Notepad opens.
+**Checkpoint:** "Hey Rocky, open Notepad" → Notepad opens.
 
 ### Phase 5 — Long-Term Memory
-*Goal: Jarvis remembers facts across sessions*
+*Goal: Rocky remembers facts across sessions*
 
 29. `backend/ai/memory/long_term.py` *(Lock + atomic write)*
 30. `backend/ai/memory/context.py` *(relevance retrieval)*
 31. `backend/api/routes/memory.py`
 
-**Checkpoint:** "Remember that I prefer dark mode" → next session: Jarvis knows.
+**Checkpoint:** "Remember that I prefer dark mode" → next session: Rocky knows.
 
 ### Phase 6 — HUD & Polish
 *Goal: looks like Iron Man*
