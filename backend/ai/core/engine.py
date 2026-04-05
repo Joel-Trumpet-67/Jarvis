@@ -40,13 +40,38 @@ def _sanitize(text: str, ai_name: str) -> str:
     return text
 
 
+_TONE_REMINDER = (
+    "Reminder: you are Rocky. Calm, dry, efficient. You execute tasks — you do not guide. "
+    "No emojis. No filler openers. No sycophancy. No emotional support language. No slang. "
+    "Speak like a capable person, not a chatbot. Do not label responses. Do not end with 'Proceed.'"
+)
+
+_REMINDER_EVERY_N = 6  # Inject a tone reminder every N messages
+
+
+_VOICE_SEED = [
+    {"role": "user",      "content": "Who are you?"},
+    {"role": "assistant", "content": "I'm Rocky. I run EIGENFORM — system control, task execution, questions. What do you need?"},
+    {"role": "user",      "content": "What can you do?"},
+    {"role": "assistant", "content": "Handle your system, open apps, search the web, manage files, answer questions. Tell me what needs doing."},
+    {"role": "user",      "content": "Play Bohemian Rhapsody on YouTube"},
+    {"role": "assistant", "content": '{"action": "search_youtube", "query": "Bohemian Rhapsody Queen"}'},
+    {"role": "user",      "content": "Open Google"},
+    {"role": "assistant", "content": '{"action": "open_url", "url": "https://www.google.com"}'},
+]
+
+
 def _build_messages(session_id: str, user_message: str, system_prompt: str) -> list:
     """
     Assemble the messages array for the model API.
-    Format: [system, ...history, user_message]
+    Format: [system, voice_seed, ...history, (tone reminder if due), user_message]
 
-    System prompt is ALWAYS first. No injected assistant messages —
-    those were causing the formal "Sir" tone via identity seeding.
+    Voice seed: two pre-baked exchanges that anchor Rocky's tone before the
+    real conversation starts. This prevents the model from freestyling on the
+    opening message, which is when personality drift is worst.
+
+    Tone reminder: injected every REMINDER_EVERY_N messages to fight drift
+    in longer conversations.
     """
     max_msgs = CONFIG.get("max_short_term_messages", 20)
     session  = get_session(session_id)
@@ -54,8 +79,15 @@ def _build_messages(session_id: str, user_message: str, system_prompt: str) -> l
 
     messages = [{"role": "system", "content": system_prompt}]
 
+    # Always prepend voice seed to anchor tone from message one
+    messages.extend(_VOICE_SEED)
+
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Re-inject tone reminder periodically to fight model drift
+    if len(history) > 0 and (len(history) % _REMINDER_EVERY_N) < 2:
+        messages.append({"role": "system", "content": _TONE_REMINDER})
 
     messages.append({"role": "user", "content": user_message})
     return messages
@@ -119,18 +151,23 @@ def stream_response(
     max_retry  = CONFIG.get("model_retry_count", 1)
     timeout    = (10, CONFIG.get("model_timeout_seconds", 60))
 
+    temperature = CONFIG.get("model_temperature", 0.4)
+
     # Build payload and headers based on format
     if api_format == "openai":
+        from backend.systems.executor import TOOL_DEFINITIONS
         payload = {
-            "model":    model_name,
-            "messages": messages,
-            "stream":   True,
+            "model":       model_name,
+            "messages":    messages,
+            "stream":      True,
+            "temperature": temperature,
+            "tools":       TOOL_DEFINITIONS,
+            "tool_choice": "auto",
         }
         headers = {
             "Content-Type":  "application/json",
             "Authorization": f"Bearer {api_key}",
         }
-        token_extractor = _extract_token_openai
     else:
         # Ollama format
         payload = {
@@ -138,9 +175,9 @@ def stream_response(
             "messages":   messages,
             "stream":     True,
             "keep_alive": "10m",
+            "options":    {"temperature": temperature},
         }
         headers = {"Content-Type": "application/json"}
-        token_extractor = _extract_token_ollama
 
     for attempt in range(max_retry + 1):
         try:
@@ -156,6 +193,7 @@ def stream_response(
             collected_tokens = []
             token_buffer = ""   # Rolling buffer for sanitization
             thinking = False    # True while inside <think>...</think> block
+            tool_calls_acc = {} # index -> {name, arguments} for native tool calling
 
             for raw_line in response.iter_lines():
                 # Hard interrupt check on every token
@@ -166,7 +204,40 @@ def stream_response(
                 if not raw_line:
                     continue
 
-                token = token_extractor(raw_line)
+                # ── OpenAI/Groq streaming ──────────────────────────────────
+                if api_format == "openai":
+                    try:
+                        line = raw_line.decode("utf-8").strip()
+                    except UnicodeDecodeError:
+                        continue
+                    if not line.startswith("data: "):
+                        continue
+                    data = line[6:]
+                    if data == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(data)
+                    except json.JSONDecodeError:
+                        continue
+
+                    choice = chunk.get("choices", [{}])[0]
+                    delta  = choice.get("delta", {})
+
+                    # Accumulate tool call fragments
+                    for tc in delta.get("tool_calls", []):
+                        idx = tc.get("index", 0)
+                        if idx not in tool_calls_acc:
+                            tool_calls_acc[idx] = {"name": "", "arguments": ""}
+                        func = tc.get("function", {})
+                        tool_calls_acc[idx]["name"]      += func.get("name", "")
+                        tool_calls_acc[idx]["arguments"] += func.get("arguments", "")
+
+                    token = delta.get("content") or ""
+
+                # ── Ollama streaming ───────────────────────────────────────
+                else:
+                    token = _extract_token_ollama(raw_line) or ""
+
                 if not token:
                     continue
 
@@ -176,11 +247,10 @@ def stream_response(
                     thinking = True
                 if thinking:
                     if "</think>" in token_buffer:
-                        # Discard everything up to and including </think>
                         token_buffer = token_buffer.split("</think>", 1)[1]
                         thinking = False
                     else:
-                        continue  # Still inside thinking block, suppress
+                        continue
 
                 clean = _sanitize(token_buffer, ai_name)
 
@@ -196,6 +266,20 @@ def stream_response(
                 final = _sanitize(token_buffer, ai_name)
                 collected_tokens.append(final)
                 yield {"type": "token", "content": final}
+
+            # ── Native tool call detected ──────────────────────────────────
+            if tool_calls_acc:
+                for idx, tc in sorted(tool_calls_acc.items()):
+                    try:
+                        args = json.loads(tc["arguments"]) if tc["arguments"] else {}
+                    except json.JSONDecodeError:
+                        args = {}
+                    yield {"type": "tool_call", "name": tc["name"], "args": args}
+                # Save the intent to memory so context isn't lost
+                session.add_message("user", user_message)
+                session.add_message("assistant", f"[tool: {list(tool_calls_acc.values())[0]['name']}]")
+                yield {"type": "done"}
+                return
 
             # Write complete exchange to session memory after full response
             if collected_tokens:

@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 import json
 from flask import Blueprint, request, Response, stream_with_context
 
-from backend.ai.core.engine import stream_response
+from backend.ai.core.dispatcher import dispatch
 from backend.ai.personality.rocky import get_system_prompt
 from backend.api.routes.status import mark_model_reachable
 
@@ -51,7 +51,7 @@ def chat():
     system_prompt = get_system_prompt()
 
     def generate():
-        for event in stream_response(session_id, message, system_prompt):
+        for event in dispatch(session_id, message, system_prompt):
             if event.get("type") == "done":
                 mark_model_reachable()  # Cache: we just got a response, we're online
             yield f"data: {json.dumps(event)}\n\n"
