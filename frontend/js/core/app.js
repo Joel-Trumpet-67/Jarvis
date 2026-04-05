@@ -101,9 +101,9 @@ const EigenApp = (() => {
       onInterrupted() {
         EigenTerminal.markInterrupted();
         window.EIGENFORM.mode = 'idle';
-        EigenTerminal.print('Of course, sir.', 'jarvis');
+        EigenTerminal.print('Stopped.', 'jarvis');
         if (typeof EigenSynthesis !== 'undefined' && EigenSynthesis.speak) {
-          EigenSynthesis.speak('Of course, sir.');
+          EigenSynthesis.speak('Stopped.');
         }
       },
     });
