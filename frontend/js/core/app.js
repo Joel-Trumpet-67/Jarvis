@@ -40,7 +40,7 @@ const EigenApp = (() => {
       if (typeof EigenAnimations !== 'undefined' && EigenAnimations.playBoot) {
         await EigenAnimations.playBoot();
       } else {
-        EigenTerminal.print('EIGENFORM online. At your service, sir.', 'system');
+        EigenTerminal.print('EIGENFORM online.', 'system');
       }
     }
   }
