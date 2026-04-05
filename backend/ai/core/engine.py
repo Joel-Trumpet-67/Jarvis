@@ -35,9 +35,8 @@ def _sanitize(text: str, ai_name: str) -> str:
     Replace any Jarvis identity slips with the correct AI name.
     Operates on complete strings (not per-token) to catch split patterns.
     """
-    text = re.sub(r'J\.A\.R\.V\.I\.S\.', ai_name, text)
+    text = re.sub(r'J\.A\.R\.V\.I\.S\.?', ai_name, text, flags=re.IGNORECASE)
     text = re.sub(r'\bJARVIS\b', ai_name, text, flags=re.IGNORECASE)
-    text = re.sub(r'\bJarvis\b', ai_name, text)
     return text
 
 
@@ -58,13 +57,11 @@ def _build_messages(session_id: str, user_message: str, system_prompt: str) -> l
 
     messages = [{"role": "system", "content": system_prompt}]
 
-    # Identity seed — model sees itself having already introduced as Rocky
-    # Only inject if there's no history yet (fresh session)
-    if not history:
-        messages.append({
-            "role": "assistant",
-            "content": f"I am {ai_name}. Your personal assistant, {user_name}. Online and ready."
-        })
+    # Identity seed — always inject before history so the model never loses its name
+    messages.append({
+        "role": "assistant",
+        "content": f"I am {ai_name}. Your personal assistant, {user_name}. Online and ready."
+    })
 
     for msg in history:
         messages.append({"role": msg["role"], "content": msg["content"]})
