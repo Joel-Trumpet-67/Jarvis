@@ -41,6 +41,16 @@ const EigenClient = (() => {
     const { onToken, onDone } = callbacks;
     const msg = message.toLowerCase().trim();
 
+    // Scene triggers — pass through to backend (backend owns scenes)
+    const scenePatterns = [
+      /wake\s+up\s+daddy.?s\s+home/i,
+      /daddy.?s\s+home/i,
+      /i.?m\s+home/i,
+      /work\s+mode/i,
+      /time\s+to\s+work/i,
+    ];
+    if (scenePatterns.some(p => p.test(message))) return false;
+
     // YouTube: play / search
     const ytPlay = /\b(?:play|stream|watch|search|find|put on)\b.{0,60}\b(?:youtube|yt)\b/i.test(message)
                 || /\b(?:youtube|yt)\b.{0,60}\b(?:play|search|find|watch)\b/i.test(message);

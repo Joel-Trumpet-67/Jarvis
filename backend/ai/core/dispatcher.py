@@ -13,6 +13,8 @@ import re
 
 from backend.systems.executor import execute_tool_call
 from backend.systems.apps.registry import APPS as _APP_REGISTRY
+from backend.systems.scenes import registry as _scenes
+from backend.systems.scenes.runner import run_scene
 
 
 # ---------------------------------------------------------------------------
@@ -174,13 +176,20 @@ def _match(message: str):
 
 def dispatch(session_id: str, message: str, system_prompt: str):
     """
-    Routes a message to a direct command handler or the AI engine.
-    Returns a generator of SSE event dicts.
+    Routes a message to a scene, a direct command, or the AI engine.
+    Priority: scenes → commands → AI model
     """
+    # 1. Scene triggers — highest priority
+    scene = _scenes.match(message)
+    if scene:
+        return run_scene(scene)
+
+    # 2. Single commands
     cmd = _match(message)
     if cmd:
         return _run_command(cmd, message)
 
+    # 3. AI model
     from backend.ai.core.engine import stream_response
     return stream_response(session_id, message, system_prompt)
 
