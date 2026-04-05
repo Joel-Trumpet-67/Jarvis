@@ -108,25 +108,36 @@ _POSITIONS = {
 }
 
 
-def snap(title_substr: str, position: str, monitor_index: int = 0) -> bool:
+def snap(position: str, monitor_index: int = 0,
+         hwnd: int = None, title_substr: str = None) -> bool:
     """
-    Find a window by title and snap it to a named position on a monitor.
+    Snap a window to a named position on a monitor.
+
+    Pass `hwnd` directly (preferred — avoids a redundant window search).
+    If hwnd is None, falls back to searching by `title_substr`.
     Returns True if successful.
     """
     mon = get_monitor(monitor_index)
     if not mon:
         return False
 
-    hwnd = find_window(title_substr, timeout=0.1)
+    if hwnd is None:
+        if not title_substr:
+            return False
+        hwnd = find_window(title_substr, timeout=1.0)
     if not hwnd:
         return False
 
-    # Restore first (de-maximise / un-minimise)
+    # Restore first so SetWindowPos works (maximised windows ignore it)
     _user32.ShowWindow(hwnd, _SW_RESTORE)
-    time.sleep(0.05)
+    time.sleep(0.15)
 
     if position == "max":
-        _user32.SetForegroundWindow(hwnd)
+        # Move to the target monitor first, then maximise there
+        _user32.SetWindowPos(hwnd, None,
+                             mon["left"] + 50, mon["top"] + 50,
+                             200, 200, _SWP_NOACTIVATE)
+        time.sleep(0.05)
         _user32.ShowWindow(hwnd, _SW_MAXIMIZE)
         return True
 
@@ -140,6 +151,6 @@ def snap(title_substr: str, position: str, monitor_index: int = 0) -> bool:
     w = int(mon["w"] * wf)
     h = int(mon["h"] * hf)
 
-    flags = _SWP_SHOWWINDOW
-    _user32.SetWindowPos(hwnd, None, x, y, w, h, flags)
+    HWND_TOP = ctypes.wintypes.HWND(0)
+    _user32.SetWindowPos(hwnd, HWND_TOP, x, y, w, h, _SWP_SHOWWINDOW)
     return True

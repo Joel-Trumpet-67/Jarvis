@@ -43,7 +43,7 @@
   height:           8px;
   border-radius:    50%;
   background:       var(--text-system);
-  box-shadow:       0 0 6px var(--accent-amber);
+  box-shadow:       none;
   transition:       background var(--t-med), box-shadow var(--t-med);
 }
 

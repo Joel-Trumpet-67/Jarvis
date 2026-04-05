@@ -65,8 +65,8 @@ SCENES: dict[str, dict] = {
 
             # 2. VS Code with EIGENFORM project — snap to left 2/3 of primary
             {"type": "open_app", "name": "eigenform"},
-            {"type": "snap",   "title": "EIGENFORM", "position": "left-2/3",
-                                "monitor": 0, "wait": 8},
+            {"type": "snap",   "title": "Visual Studio Code", "position": "left-2/3",
+                                "monitor": 0, "wait": 10},
 
             # 3. Claude desktop app — left half of secondary monitor
             {"type": "open_app", "name": "claude"},

@@ -1,8 +1,9 @@
 """
 runner.py — Executes a scene's action list and yields SSE events.
 
-Each action runs in sequence. Snap actions wait for the target window
-to appear before positioning it. Rocky narrates progress via token events.
+Scenes emit only token events (no command_executed spam) so the HUD
+doesn't flicker. The hwnd found while waiting is passed directly into
+snap() so there's no redundant second window search.
 """
 
 import os
@@ -13,7 +14,7 @@ import webbrowser
 from backend.systems.scenes.windows import snap, find_window
 from backend.systems.apps.launcher import launch_app
 
-_PF    = os.environ.get("ProgramFiles",      r"C:\Program Files")
+_PF     = os.environ.get("ProgramFiles", r"C:\Program Files")
 _CHROME = os.path.join(_PF, r"Google\Chrome\Application\chrome.exe")
 
 
@@ -22,8 +23,7 @@ def run_scene(scene: dict):
     Generator. Yields SSE event dicts for each step in the scene.
 
     Yields:
-      {"type": "token",            "content": "..."}
-      {"type": "command_executed", "command": "scene_step", "args": {...}, "ok": bool}
+      {"type": "token", "content": "..."}
       {"type": "done"}
     """
     greeting = scene.get("greeting", "Running scene.")
@@ -45,92 +45,53 @@ def run_scene(scene: dict):
         # ── open_app ──────────────────────────────────────────────────────
         elif atype == "open_app":
             name = action.get("name", "")
-            ok, msg = launch_app(name)
-            yield {
-                "type":    "command_executed",
-                "command": "open_app",
-                "args":    {"name": name},
-                "ok":      ok,
-            }
+            launch_app(name)   # fire and forget — snap handles timing
 
         # ── open_url ──────────────────────────────────────────────────────
         elif atype == "open_url":
             url = action.get("url", "")
             try:
                 webbrowser.open(url, new=2)
-                ok = True
             except Exception:
-                ok = False
-            yield {
-                "type":    "command_executed",
-                "command": "open_url",
-                "args":    {"url": url},
-                "ok":      ok,
-            }
+                pass
 
         # ── open_url_window ───────────────────────────────────────────────
         elif atype == "open_url_window":
             url = action.get("url", "")
-            ok = _open_in_new_window(url)
-            yield {
-                "type":    "command_executed",
-                "command": "open_url_window",
-                "args":    {"url": url},
-                "ok":      ok,
-            }
+            _open_in_new_window(url)
 
         # ── spotify_playlist ──────────────────────────────────────────────
         elif atype == "spotify_playlist":
             playlist_id = action.get("id", "")
-            uri = f"spotify:playlist:{playlist_id}"
             try:
-                webbrowser.open(uri)
-                ok = True
+                webbrowser.open(f"spotify:playlist:{playlist_id}")
             except Exception:
-                ok = False
-            yield {
-                "type":    "command_executed",
-                "command": "spotify_playlist",
-                "args":    {"id": playlist_id},
-                "ok":      ok,
-            }
+                pass
 
         # ── snap ──────────────────────────────────────────────────────────
         elif atype == "snap":
             title    = action.get("title", "")
             position = action.get("position", "full")
             monitor  = action.get("monitor", 0)
-            wait_sec = action.get("wait", 5.0)
+            wait_sec = action.get("wait", 6.0)
 
-            # Wait for the window to appear
+            # Wait for the window to appear, then pass hwnd directly so
+            # snap() doesn't do a redundant second search that might fail
             hwnd = find_window(title, timeout=wait_sec)
             if hwnd:
                 time.sleep(0.4)  # let the window finish rendering
-                ok = snap(title, position, monitor)
-            else:
-                ok = False
-
-            yield {
-                "type":    "command_executed",
-                "command": "snap",
-                "args":    {"title": title, "position": position, "monitor": monitor},
-                "ok":      ok,
-            }
+                snap(position=position, monitor_index=monitor, hwnd=hwnd)
 
     yield {"type": "done"}
 
 
 def _open_in_new_window(url: str) -> bool:
-    """
-    Open a URL in a new browser window (not a tab).
-    Tries Chrome first (--new-window flag), falls back to webbrowser.
-    """
+    """Open a URL in a new browser window using Chrome --new-window."""
     chrome_paths = [
         _CHROME,
         os.path.join(os.environ.get("ProgramFiles(x86)", ""), r"Google\Chrome\Application\chrome.exe"),
         os.path.join(os.environ.get("LOCALAPPDATA", ""),      r"Google\Chrome\Application\chrome.exe"),
     ]
-
     for path in chrome_paths:
         if os.path.exists(path):
             try:
@@ -138,8 +99,6 @@ def _open_in_new_window(url: str) -> bool:
                 return True
             except Exception:
                 pass
-
-    # Fallback
     try:
         webbrowser.open(url, new=1)
         return True
