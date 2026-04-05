@@ -57,12 +57,19 @@ APPS: dict[str, str | list[str]] = {
     "steam":    os.path.join(_PF86, r"Steam\steam.exe"),
     "vlc":      os.path.join(_PF,   r"VideoLAN\VLC\vlc.exe"),
 
+    # ── AI apps (Windows Store / MSIX — launched via shell: URI) ─────────────
+    # Format: "shell:AppsFolder\<PackageFamilyName>!<AppId>"
+    "claude":   "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude",
+    "chatgpt":  os.path.join(_LOCALAPPDATA, r"Microsoft\WindowsApps\chatgpt.exe"),
+
     # ── Dev tools ────────────────────────────────────────────────────────────
-    "code":      "code",           # VS Code (must be in PATH)
-    "vscode":    "code",
-    "vs code":   "code",
-    "git bash":  os.path.join(_PF, r"Git\git-bash.exe"),
-    "postman":   os.path.join(_LOCALAPPDATA, r"Postman\Postman.exe"),
+    "code":       "code",
+    "vscode":     "code",
+    "vs code":    "code",
+    # Open VS Code directly into the EIGENFORM project
+    "eigenform":  ["code", r"C:\Users\Joel\Documents\GitHub\EIGENFORM"],
+    "git bash":   os.path.join(_PF, r"Git\git-bash.exe"),
+    "postman":    os.path.join(_LOCALAPPDATA, r"Postman\Postman.exe"),
 
     # ── Office ───────────────────────────────────────────────────────────────
     "word":       os.path.join(_PF, r"Microsoft Office\root\Office16\WINWORD.EXE"),

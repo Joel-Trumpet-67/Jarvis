@@ -46,18 +46,27 @@ def launch_app(name: str) -> tuple[bool, str]:
     executable = _resolve_glob(args[0])
     args[0] = executable
 
-    # If the path doesn't exist and it's not a bare command name (i.e. in PATH),
+    display = name.title()
+
+    # Windows Store / MSIX apps — launched via shell: URI using os.startfile
+    if executable.lower().startswith("shell:"):
+        try:
+            os.startfile(executable)
+            return True, f"Opening {display}."
+        except Exception as e:
+            return True, f"Couldn't open {display}: {e}"
+
+    # If the path doesn't exist and it's not a bare command name (in PATH),
     # skip rather than crash.
     if os.path.isabs(executable) and not os.path.exists(executable):
-        return True, f"Can't find {name} — it may not be installed."
+        return True, f"Can't find {display} — it may not be installed."
 
     try:
         subprocess.Popen(args, shell=False, close_fds=True)
-        display = name.title()
         return True, f"Opening {display}."
     except FileNotFoundError:
-        return True, f"Can't find {name} — it may not be installed."
+        return True, f"Can't find {display} — it may not be installed."
     except PermissionError:
-        return True, f"Permission denied opening {name}."
+        return True, f"Permission denied opening {display}."
     except Exception as e:
-        return True, f"Couldn't open {name}: {e}"
+        return True, f"Couldn't open {display}: {e}"

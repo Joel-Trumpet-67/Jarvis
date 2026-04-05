@@ -47,6 +47,7 @@ const EigenClient = (() => {
       /daddy.?s\s+home/i,
       /i.?m\s+home/i,
       /work\s+mode/i,
+      /let.?s\s+work/i,
       /time\s+to\s+work/i,
     ];
     if (scenePatterns.some(p => p.test(message))) return false;

@@ -48,6 +48,8 @@ _CHROME = os.path.join(_PF, r"Google\Chrome\Application\chrome.exe")
 SCENES: dict[str, dict] = {
 
     # ── "Daddy's home" ─────────────────────────────────────────────────────
+    # Primary monitor   (0): 1920×1080  — VS Code (left 2/3) + Spotify (right 1/3)
+    # Secondary monitor (1): 1366×768   — Claude (left half) + ChatGPT (right half)
     "home": {
         "patterns": [
             r"wake\s+up\s+daddy.?s\s+home",
@@ -56,45 +58,43 @@ SCENES: dict[str, dict] = {
         ],
         "greeting": "Welcome home. Setting things up.",
         "actions": [
-            # Music first — plays in the background while everything else loads
+            # 1. Spotify — start music immediately, snap to right strip of primary
             {"type": "spotify_playlist", "id": "4K92J71PPuxqvq8l8Q2tlO"},
-            {"type": "wait", "seconds": 1.0},
+            {"type": "snap",   "title": "Spotify",  "position": "right-1/3",
+                                "monitor": 0, "wait": 6},
 
-            # Dev setup on primary monitor (1920×1080, monitor 0)
-            {"type": "open_app",    "name": "vs code"},
-            {"type": "snap",        "title": "Visual Studio Code",
-                                    "position": "left", "monitor": 0, "wait": 7},
+            # 2. VS Code with EIGENFORM project — snap to left 2/3 of primary
+            {"type": "open_app", "name": "eigenform"},
+            {"type": "snap",   "title": "EIGENFORM", "position": "left-2/3",
+                                "monitor": 0, "wait": 8},
 
-            # ChatGPT — right half of primary
-            {"type": "open_url_window", "url": "https://chatgpt.com"},
-            {"type": "snap",        "title": "ChatGPT",
-                                    "position": "right", "monitor": 0, "wait": 8},
+            # 3. Claude desktop app — left half of secondary monitor
+            {"type": "open_app", "name": "claude"},
+            {"type": "snap",   "title": "Claude",   "position": "left",
+                                "monitor": 1, "wait": 8},
 
-            # Claude — full screen on secondary monitor
-            {"type": "open_url_window", "url": "https://claude.ai"},
-            {"type": "snap",        "title": "Claude",
-                                    "position": "full", "monitor": 1, "wait": 8},
+            # 4. ChatGPT desktop app — right half of secondary monitor
+            {"type": "open_app", "name": "chatgpt"},
+            {"type": "snap",   "title": "ChatGPT",  "position": "right",
+                                "monitor": 1, "wait": 8},
 
             {"type": "say", "text": "All set."},
         ],
     },
 
-    # ── Work mode (example — edit to taste) ────────────────────────────────
+    # ── Work mode ──────────────────────────────────────────────────────────
     "work": {
         "patterns": [
             r"work\s+mode",
             r"let.?s\s+work",
             r"time\s+to\s+work",
         ],
-        "greeting": "Work mode. Pulling everything up.",
+        "greeting": "Work mode.",
         "actions": [
-            {"type": "open_app",        "name": "vs code"},
-            {"type": "snap",            "title": "Visual Studio Code",
-                                        "position": "full", "monitor": 0, "wait": 7},
-            {"type": "open_url_window", "url": "https://github.com"},
-            {"type": "snap",            "title": "GitHub",
-                                        "position": "full", "monitor": 1, "wait": 8},
-            {"type": "say", "text": "VS Code on the main screen, GitHub on the side."},
+            {"type": "open_app", "name": "eigenform"},
+            {"type": "snap",     "title": "EIGENFORM", "position": "full",
+                                  "monitor": 0, "wait": 8},
+            {"type": "say", "text": "VS Code up."},
         ],
     },
 
