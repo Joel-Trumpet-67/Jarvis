@@ -1,11 +1,11 @@
 /**
  * terminal.js — Renders all output lines to the terminal DOM.
  *
- * Line types:  'user' | 'jarvis' | 'system' | 'error' | 'interrupted'
+ * Line types:  'user' | 'rocky' | 'system' | 'error' | 'interrupted'
  *
  * Exposed as: EigenTerminal
  *   .print(text, type)        — append a complete line
- *   .startStreaming()         — open a new Jarvis line for token streaming
+ *   .startStreaming()         — open a new Rocky line for token streaming
  *   .appendToken(token)       — append token to the active streaming line
  *   .finalizeStreaming()      — close the streaming line (remove cursor)
  *   .markInterrupted()        — dim the current streaming line
@@ -17,13 +17,13 @@ const EigenTerminal = (() => {
   const OUTPUT_ID  = 'terminalOutput';
   const PREFIXES   = {
     user:        '>',
-    jarvis:      '◈',
+    rocky:       '◈',
     system:      '//',
     error:       '!',
     interrupted: '◈',
   };
 
-  let _activeStreamLine = null; // The current streaming Jarvis line element
+  let _activeStreamLine = null; // The current streaming Rocky line element
 
   function _getOutput() {
     return document.getElementById(OUTPUT_ID);
@@ -68,11 +68,11 @@ const EigenTerminal = (() => {
   }
 
   /**
-   * Open a new Jarvis line showing a thinking placeholder.
+   * Open a new Rocky line showing a thinking placeholder.
    * The placeholder is cleared automatically on the first token.
    */
   function startStreaming() {
-    const line = _createLine('', 'jarvis');
+    const line = _createLine('', 'rocky');
     if (line) {
       line.classList.add('streaming');
       _activeStreamLine = line;
@@ -116,7 +116,7 @@ const EigenTerminal = (() => {
   /** Dim the active streaming line to show it was interrupted. */
   function markInterrupted() {
     if (_activeStreamLine) {
-      _activeStreamLine.classList.remove('streaming', 'jarvis');
+      _activeStreamLine.classList.remove('streaming', 'rocky');
       _activeStreamLine.classList.add('interrupted');
       const prefix = _activeStreamLine.querySelector('.line-prefix');
       if (prefix) prefix.textContent = PREFIXES.interrupted;
@@ -131,7 +131,7 @@ const EigenTerminal = (() => {
   function renderHistory(messages) {
     if (!messages || !messages.length) return;
     messages.forEach(msg => {
-      const type = msg.role === 'user' ? 'user' : 'jarvis';
+      const type = msg.role === 'user' ? 'user' : 'rocky';
       print(msg.content, type);
     });
   }

@@ -15,7 +15,7 @@
   --bg-panel:            #080c14;
 
   /* Text colors by line type */
-  --text-jarvis:         #00d4ff;
+  --text-rocky:         #00d4ff;
   --text-user:           #ffffff;
   --text-system:         #ffb300;
   --text-error:          #ff4444;
@@ -65,7 +65,7 @@ html, body {
   height:      100%;
   overflow:    hidden;
   background:  var(--bg-primary);
-  color:       var(--text-jarvis);
+  color:       var(--text-rocky);
   font-family: var(--font-mono);
   font-size:   var(--font-size-base);
   line-height: var(--line-height);

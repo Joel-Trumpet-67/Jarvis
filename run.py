@@ -92,9 +92,11 @@ def main():
     debug = CONFIG.get("flask_debug", False)
     url   = f"http://{host}:{port}"
 
+    ai_name = CONFIG.get("ai_name", "Rocky")
     print(f"\n{'=' * 54}")
-    print(f"  EIGENFORM  —  J.A.R.V.I.S.")
+    print(f"  EIGENFORM  —  {ai_name.upper()}")
     print(f"{'=' * 54}")
+    print(f"  AI     : {ai_name}")
     print(f"  Model  : {CONFIG.get('model_name')} @ {CONFIG.get('model_api_url')}")
     print(f"  Server : {url}")
     print(f"  Status : {get_boot_message()}")

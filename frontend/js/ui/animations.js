@@ -37,7 +37,7 @@ const EigenAnimations = (() => {
         await _sleep(BOOT_LINE_DELAY_MS / 2);
         continue;
       }
-      const type = line.startsWith('//') ? 'system' : 'jarvis';
+      const type = line.startsWith('//') ? 'system' : 'rocky';
       EigenTerminal.print(line, type);
       await _sleep(BOOT_LINE_DELAY_MS);
     }

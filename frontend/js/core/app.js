@@ -63,7 +63,7 @@ const EigenApp = (() => {
     // Render user line
     EigenTerminal.print(text, 'user');
 
-    // Open a Jarvis streaming line
+    // Open a Rocky streaming line
     EigenTerminal.startStreaming();
     window.EIGENFORM.mode = 'thinking';
 
@@ -101,7 +101,7 @@ const EigenApp = (() => {
       onInterrupted() {
         EigenTerminal.markInterrupted();
         window.EIGENFORM.mode = 'idle';
-        EigenTerminal.print('Stopped.', 'jarvis');
+        EigenTerminal.print('Stopped.', 'rocky');
         if (typeof EigenSynthesis !== 'undefined' && EigenSynthesis.speak) {
           EigenSynthesis.speak('Stopped.');
         }

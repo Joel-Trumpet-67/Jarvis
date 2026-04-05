@@ -19,7 +19,7 @@ import json
 from flask import Blueprint, request, Response, stream_with_context
 
 from backend.ai.core.engine import stream_response
-from backend.ai.personality.jarvis import get_system_prompt
+from backend.ai.personality.rocky import get_system_prompt
 
 chat_bp = Blueprint("chat", __name__)
 

@@ -6,7 +6,7 @@
 
 /* ── AMBER — classic terminal gold ── */
 [data-theme="amber"] {
-  --text-jarvis:       #ffb300;
+  --text-rocky:       #ffb300;
   --text-system:       #e07b00;
   --text-ghost:        #5a3d00;
   --text-dim:          #3a2800;
@@ -24,7 +24,7 @@
 
 /* ── GREEN — classic phosphor terminal ── */
 [data-theme="green"] {
-  --text-jarvis:       #00e676;
+  --text-rocky:       #00e676;
   --text-system:       #69f0ae;
   --text-ghost:        #00401e;
   --text-dim:          #002a14;
@@ -42,7 +42,7 @@
 
 /* ── RED — alert / critical mode ── */
 [data-theme="red"] {
-  --text-jarvis:       #ff4444;
+  --text-rocky:       #ff4444;
   --text-system:       #ff8a80;
   --text-ghost:        #4a0000;
   --text-dim:          #300000;
@@ -60,7 +60,7 @@
 
 /* ── CYAN — default (same as main.css, here for explicit switching) ── */
 [data-theme="cyan"] {
-  --text-jarvis:       #00d4ff;
+  --text-rocky:       #00d4ff;
   --text-system:       #ffb300;
   --text-ghost:        #3d5166;
   --text-dim:          #253040;

@@ -32,7 +32,7 @@
   font-size:      var(--font-size-sm);
   font-weight:    700;
   letter-spacing: 0.22em;
-  color:          var(--text-jarvis);
+  color:          var(--text-rocky);
   text-shadow:    0 0 12px var(--accent-glow);
 }
 
@@ -48,7 +48,7 @@
 }
 
 .status-ring.online {
-  background:  var(--text-jarvis);
+  background:  var(--text-rocky);
   box-shadow:  0 0 8px var(--accent-glow);
   animation:   statusPulse 2.4s ease-in-out infinite;
 }
@@ -129,13 +129,13 @@
 
 .hud-btn:hover {
   border-color: var(--accent);
-  color:        var(--text-jarvis);
+  color:        var(--text-rocky);
   box-shadow:   0 0 8px var(--accent-glow-sm);
 }
 
 .hud-btn.active {
   border-color: var(--accent);
-  color:        var(--text-jarvis);
+  color:        var(--text-rocky);
 }
 
 .hud-btn--danger {
@@ -151,7 +151,7 @@
 
 /* Mic status states */
 #micStatus.listening {
-  color:     var(--text-jarvis);
+  color:     var(--text-rocky);
   animation: statusPulse 1.2s ease-in-out infinite;
 }
 

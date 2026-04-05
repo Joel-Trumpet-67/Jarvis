@@ -59,7 +59,7 @@ a = Analysis(
         "backend.ai.memory.long_term",
         "backend.ai.memory.context",
         "backend.ai.personality",
-        "backend.ai.personality.jarvis",
+        "backend.ai.personality.rocky",
         "backend.ai.personality.responses",
         "backend.ai.nlp",
         "backend.ai.reasoning",

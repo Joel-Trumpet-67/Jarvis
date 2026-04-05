@@ -45,10 +45,10 @@
 .terminal-line.user .line-prefix  { color: var(--text-ghost); content: '>'; }
 .terminal-line.user .line-content { color: var(--text-user);  }
 
-/* ── Line type: Jarvis ── */
-.terminal-line.jarvis .line-prefix  { color: var(--text-jarvis); }
-.terminal-line.jarvis .line-content {
-  color:       var(--text-jarvis);
+/* ── Line type: Rocky ── */
+.terminal-line.rocky .line-prefix  { color: var(--text-rocky); }
+.terminal-line.rocky .line-content {
+  color:       var(--text-rocky);
   text-shadow: 0 0 10px var(--accent-glow-sm);
 }
 
@@ -71,11 +71,11 @@
   font-style: italic;
 }
 
-/* --- Streaming cursor on active Jarvis line --- */
-.terminal-line.jarvis.streaming .line-content::after {
+/* --- Streaming cursor on active Rocky line --- */
+.terminal-line.rocky.streaming .line-content::after {
   content:   '▋';
   animation: cursorBlink 0.75s step-end infinite;
-  color:     var(--text-jarvis);
+  color:     var(--text-rocky);
   margin-left: 1px;
 }
 
