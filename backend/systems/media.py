@@ -53,28 +53,46 @@ def _find_spotify() -> int | None:
     return found[0] if found else None
 
 
+_VK_MAP = {
+    _APPCOMMAND_NEXT:        _VK_MEDIA_NEXT,
+    _APPCOMMAND_PREV:        _VK_MEDIA_PREV,
+    _APPCOMMAND_STOP:        _VK_MEDIA_STOP,
+    _APPCOMMAND_PLAY_PAUSE:  _VK_MEDIA_PLAY_PAUSE,
+    _APPCOMMAND_VOLUME_UP:   _VK_VOLUME_UP,
+    _APPCOMMAND_VOLUME_DOWN: _VK_VOLUME_DOWN,
+    _APPCOMMAND_VOLUME_MUTE: _VK_VOLUME_MUTE,
+}
+
+def _vk_press(vk: int):
+    _user32.keybd_event(vk, 0, 0, 0)
+    time.sleep(0.05)
+    _user32.keybd_event(vk, 0, _KEYEVENTF_KEYUP, 0)
+
+
 def _appcommand(cmd: int):
-    """Send WM_APPCOMMAND to Spotify, falling back to a virtual key press."""
+    """
+    Three-layer approach — each one is tried in order:
+    1. WM_APPCOMMAND via SendMessage to Spotify window
+    2. Broadcast WM_APPCOMMAND to all top-level windows
+    3. keybd_event virtual media key (global fallback)
+    """
+    lParam = ctypes.wintypes.LPARAM(cmd << 16)
+
+    # Layer 1 — direct to Spotify
     hwnd = _find_spotify()
     if hwnd:
-        lParam = ctypes.wintypes.LPARAM(cmd << 16)
-        _user32.PostMessageW(hwnd, _WM_APPCOMMAND, hwnd, lParam)
-    else:
-        # Fallback: map to virtual media key
-        vk_map = {
-            _APPCOMMAND_NEXT:       _VK_MEDIA_NEXT,
-            _APPCOMMAND_PREV:       _VK_MEDIA_PREV,
-            _APPCOMMAND_STOP:       _VK_MEDIA_STOP,
-            _APPCOMMAND_PLAY_PAUSE: _VK_MEDIA_PLAY_PAUSE,
-            _APPCOMMAND_VOLUME_UP:  _VK_VOLUME_UP,
-            _APPCOMMAND_VOLUME_DOWN:_VK_VOLUME_DOWN,
-            _APPCOMMAND_VOLUME_MUTE:_VK_VOLUME_MUTE,
-        }
-        vk = vk_map.get(cmd)
-        if vk:
-            _user32.keybd_event(vk, 0, 0, 0)
-            time.sleep(0.05)
-            _user32.keybd_event(vk, 0, _KEYEVENTF_KEYUP, 0)
+        _user32.SendMessageW(hwnd, _WM_APPCOMMAND, hwnd, lParam)
+        time.sleep(0.05)
+
+    # Layer 2 — broadcast to all windows (catches Store/UWP apps)
+    HWND_BROADCAST = ctypes.wintypes.HWND(0xFFFF)
+    _user32.PostMessageW(HWND_BROADCAST, _WM_APPCOMMAND, 0, lParam)
+    time.sleep(0.05)
+
+    # Layer 3 — virtual key fallback
+    vk = _VK_MAP.get(cmd)
+    if vk:
+        _vk_press(vk)
 
 
 def next_track(_: dict) -> str:

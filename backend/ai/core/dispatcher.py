@@ -156,8 +156,12 @@ _COMMANDS = [
     {
         "name": "play_pause",
         "patterns": [
-            r'\bpause\b',
+            r'^\s*play\s*$',                                         # bare "play"
+            r'^\s*pause\s*$',                                        # bare "pause"
+            r'\bpause\s+(?:the\s+)?(?:music|song|track|spotify)\b', # "pause the music"
             r'\bunpause\b',
+            r'\b(?:press|click|hit)\s+play\b',                      # "press play", "click play"
+            r'\b(?:press|click|hit)\s+pause\b',
             r'\bresume\s+(?:the\s+)?(?:music|song|spotify|playing)?\b',
             r'\bplay[/ ]pause\b',
             r'\bplay\s+(?:the\s+)?(?:music|song|spotify)\b',
