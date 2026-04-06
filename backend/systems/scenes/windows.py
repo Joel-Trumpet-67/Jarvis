@@ -153,4 +153,8 @@ def snap(position: str, monitor_index: int = 0,
 
     HWND_TOP = ctypes.wintypes.HWND(0)
     _user32.SetWindowPos(hwnd, HWND_TOP, x, y, w, h, _SWP_SHOWWINDOW)
+    # Second pass — some apps (Spotify) re-maximize immediately after the first call
+    time.sleep(0.25)
+    _user32.ShowWindow(hwnd, _SW_RESTORE)
+    _user32.SetWindowPos(hwnd, HWND_TOP, x, y, w, h, _SWP_SHOWWINDOW)
     return True
