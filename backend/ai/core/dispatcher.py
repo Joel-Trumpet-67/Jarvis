@@ -154,20 +154,35 @@ _COMMANDS = [
         "extract": lambda _: {},
     },
     {
+        "name": "play",
+        "patterns": [
+            r'^\s*play\s*$',
+            r'\b(?:press|click|hit)\s+play\b',
+            r'\bresume\b',
+            r'\bkeep\s+playing\b',
+            r'\bplay\s+(?:the\s+)?(?:music|song|spotify)\b',
+            r'\bstart\s+(?:the\s+)?(?:music|song|spotify)\b',
+        ],
+        "tool":    "play",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "pause",
+        "patterns": [
+            r'^\s*pause\s*$',
+            r'\b(?:press|click|hit)\s+pause\b',
+            r'\bpause\s+(?:the\s+)?(?:music|song|track|spotify)\b',
+            r'\bunpause\b',
+            r'\bstop\s+(?:the\s+)?music\b',
+        ],
+        "tool":    "pause",
+        "extract": lambda _: {},
+    },
+    {
         "name": "play_pause",
         "patterns": [
-            r'^\s*play\s*$',                                         # bare "play"
-            r'^\s*pause\s*$',                                        # bare "pause"
-            r'\bpause\s+(?:the\s+)?(?:music|song|track|spotify)\b', # "pause the music"
-            r'\bunpause\b',
-            r'\b(?:press|click|hit)\s+play\b',                      # "press play", "click play"
-            r'\b(?:press|click|hit)\s+pause\b',
-            r'\bresume\s+(?:the\s+)?(?:music|song|spotify|playing)?\b',
             r'\bplay[/ ]pause\b',
-            r'\bplay\s+(?:the\s+)?(?:music|song|spotify)\b',
-            r'\bstop\s+(?:the\s+)?music\b',
             r'\btoggle\s+(?:the\s+)?(?:music|playback)\b',
-            r'\bkeep\s+playing\b',
         ],
         "tool":    "play_pause",
         "extract": lambda _: {},

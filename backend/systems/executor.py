@@ -59,6 +59,8 @@ _ACTIONS = {
     "search_youtube": _search_youtube,
     "next_track":     _media.next_track,
     "prev_track":     _media.prev_track,
+    "play":           _media.play,
+    "pause":          _media.pause,
     "play_pause":     _media.play_pause,
     "stop_media":     _media.stop_media,
     "volume_up":      _media.volume_up,

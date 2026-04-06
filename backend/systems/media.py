@@ -1,9 +1,12 @@
 """
-media.py — Media control via WM_APPCOMMAND.
+media.py — Media control via WM_APPCOMMAND sent directly to Spotify.
 
-Sends WM_APPCOMMAND directly to the Spotify window — no focus change,
-no keybd_event that gets lost to the wrong app. Falls back to the
-system-wide media virtual keys if Spotify isn't found.
+Uses dedicated PLAY (46) and PAUSE (47) commands instead of the
+PLAY_PAUSE toggle (14) — Spotify Store sometimes ignores the toggle
+but responds to the explicit commands.
+
+No broadcast layer — sending to both direct and broadcast caused
+double-triggers that cancelled each other out.
 """
 
 import ctypes
@@ -12,17 +15,17 @@ import time
 
 _user32 = ctypes.windll.user32
 
-# WM_APPCOMMAND constants
 _WM_APPCOMMAND          = 0x0319
-_APPCOMMAND_VOLUME_MUTE = 8
-_APPCOMMAND_VOLUME_DOWN = 9
-_APPCOMMAND_VOLUME_UP   = 10
 _APPCOMMAND_NEXT        = 11
 _APPCOMMAND_PREV        = 12
 _APPCOMMAND_STOP        = 13
-_APPCOMMAND_PLAY_PAUSE  = 14
+_APPCOMMAND_PLAY_PAUSE  = 14   # toggle — kept as fallback
+_APPCOMMAND_VOLUME_MUTE = 8
+_APPCOMMAND_VOLUME_DOWN = 9
+_APPCOMMAND_VOLUME_UP   = 10
+_APPCOMMAND_PLAY        = 46   # explicit play
+_APPCOMMAND_PAUSE       = 47   # explicit pause
 
-# Fallback virtual keys (used if no target window found)
 _KEYEVENTF_KEYUP     = 0x0002
 _VK_MEDIA_NEXT       = 0xB0
 _VK_MEDIA_PREV       = 0xB1
@@ -34,7 +37,6 @@ _VK_VOLUME_UP        = 0xAF
 
 
 def _find_spotify() -> int | None:
-    """Return the Spotify window handle, or None."""
     found = []
     EnumProc = ctypes.WINFUNCTYPE(
         ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM
@@ -53,74 +55,62 @@ def _find_spotify() -> int | None:
     return found[0] if found else None
 
 
-_VK_MAP = {
-    _APPCOMMAND_NEXT:        _VK_MEDIA_NEXT,
-    _APPCOMMAND_PREV:        _VK_MEDIA_PREV,
-    _APPCOMMAND_STOP:        _VK_MEDIA_STOP,
-    _APPCOMMAND_PLAY_PAUSE:  _VK_MEDIA_PLAY_PAUSE,
-    _APPCOMMAND_VOLUME_UP:   _VK_VOLUME_UP,
-    _APPCOMMAND_VOLUME_DOWN: _VK_VOLUME_DOWN,
-    _APPCOMMAND_VOLUME_MUTE: _VK_VOLUME_MUTE,
-}
-
 def _vk_press(vk: int):
     _user32.keybd_event(vk, 0, 0, 0)
     time.sleep(0.05)
     _user32.keybd_event(vk, 0, _KEYEVENTF_KEYUP, 0)
 
 
-def _appcommand(cmd: int):
+def _send(cmd: int, vk_fallback: int | None = None):
     """
-    Three-layer approach — each one is tried in order:
-    1. WM_APPCOMMAND via SendMessage to Spotify window
-    2. Broadcast WM_APPCOMMAND to all top-level windows
-    3. keybd_event virtual media key (global fallback)
+    Send WM_APPCOMMAND to Spotify directly.
+    No broadcast — that caused double-triggers.
+    Falls back to virtual key only if Spotify window not found.
     """
     lParam = ctypes.wintypes.LPARAM(cmd << 16)
-
-    # Layer 1 — direct to Spotify
     hwnd = _find_spotify()
     if hwnd:
         _user32.SendMessageW(hwnd, _WM_APPCOMMAND, hwnd, lParam)
-        time.sleep(0.05)
+    elif vk_fallback:
+        _vk_press(vk_fallback)
 
-    # Layer 2 — broadcast to all windows (catches Store/UWP apps)
-    HWND_BROADCAST = ctypes.wintypes.HWND(0xFFFF)
-    _user32.PostMessageW(HWND_BROADCAST, _WM_APPCOMMAND, 0, lParam)
-    time.sleep(0.05)
 
-    # Layer 3 — virtual key fallback
-    vk = _VK_MAP.get(cmd)
-    if vk:
-        _vk_press(vk)
+# ── Public commands ──────────────────────────────────────────────────────────
 
+def play(_: dict) -> str:
+    _send(_APPCOMMAND_PLAY, _VK_MEDIA_PLAY_PAUSE)
+    return "Playing."
+
+def pause(_: dict) -> str:
+    _send(_APPCOMMAND_PAUSE, _VK_MEDIA_PLAY_PAUSE)
+    return "Paused."
+
+def play_pause(_: dict) -> str:
+    _send(_APPCOMMAND_PLAY_PAUSE, _VK_MEDIA_PLAY_PAUSE)
+    return "Play/pause."
 
 def next_track(_: dict) -> str:
-    _appcommand(_APPCOMMAND_NEXT)
+    _send(_APPCOMMAND_NEXT, _VK_MEDIA_NEXT)
     return "Next track."
 
 def prev_track(_: dict) -> str:
-    _appcommand(_APPCOMMAND_PREV)
+    _send(_APPCOMMAND_PREV, _VK_MEDIA_PREV)
     return "Previous track."
 
-def play_pause(_: dict) -> str:
-    _appcommand(_APPCOMMAND_PLAY_PAUSE)
-    return "Play/pause."
-
 def stop_media(_: dict) -> str:
-    _appcommand(_APPCOMMAND_STOP)
+    _send(_APPCOMMAND_STOP, _VK_MEDIA_STOP)
     return "Stopped."
 
 def volume_up(_: dict) -> str:
     for _ in range(3):
-        _appcommand(_APPCOMMAND_VOLUME_UP)
+        _send(_APPCOMMAND_VOLUME_UP, _VK_VOLUME_UP)
     return "Volume up."
 
 def volume_down(_: dict) -> str:
     for _ in range(3):
-        _appcommand(_APPCOMMAND_VOLUME_DOWN)
+        _send(_APPCOMMAND_VOLUME_DOWN, _VK_VOLUME_DOWN)
     return "Volume down."
 
 def mute(_: dict) -> str:
-    _appcommand(_APPCOMMAND_VOLUME_MUTE)
+    _send(_APPCOMMAND_VOLUME_MUTE, _VK_VOLUME_MUTE)
     return "Muted."
