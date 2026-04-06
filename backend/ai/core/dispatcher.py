@@ -128,6 +128,74 @@ _COMMANDS = [
         "extract": _extract_app_name,
     },
 
+    # ── Media control ─────────────────────────────────────────────────────────
+    {
+        "name": "next_track",
+        "patterns": [
+            r'\b(?:next|skip)\s+(?:track|song|music)\b',
+            r'\bskip\b',
+            r'\bclick\s+(?:the\s+)?next\b',
+            r'\bpress\s+next\b',
+            r'\bnext\s+(?:song|track)\b',
+            r'\bgo\s+to\s+(?:the\s+)?next\b',
+        ],
+        "tool":    "next_track",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "prev_track",
+        "patterns": [
+            r'\b(?:previous|prev|last|back)\s+(?:track|song|music)\b',
+            r'\bgo\s+back\b',
+            r'\bplay\s+(?:that\s+)?again\b',
+            r'\breplay\b',
+        ],
+        "tool":    "prev_track",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "play_pause",
+        "patterns": [
+            r'\bpause\s+(?:the\s+)?(?:music|song|track|spotify)?\b',
+            r'\bresume\s+(?:the\s+)?(?:music|song|spotify)?\b',
+            r'\bplay[/ ]pause\b',
+            r'\bstop\s+(?:the\s+)?music\b',
+            r'\btoggle\s+(?:the\s+)?music\b',
+        ],
+        "tool":    "play_pause",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "volume_up",
+        "patterns": [
+            r'\bvolume\s+up\b',
+            r'\bturn\s+(?:it|the\s+volume|music)?\s*up\b',
+            r'\blouder\b',
+        ],
+        "tool":    "volume_up",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "volume_down",
+        "patterns": [
+            r'\bvolume\s+down\b',
+            r'\bturn\s+(?:it|the\s+volume|music)?\s*down\b',
+            r'\bquieter\b',
+            r'\blower\s+(?:the\s+)?volume\b',
+        ],
+        "tool":    "volume_down",
+        "extract": lambda _: {},
+    },
+    {
+        "name": "mute",
+        "patterns": [
+            r'\bmute\b',
+            r'\bsilence\s+(?:the\s+)?(?:music|audio|sound)?\b',
+        ],
+        "tool":    "mute",
+        "extract": lambda _: {},
+    },
+
     # ── YouTube ───────────────────────────────────────────────────────────────
     {
         "name": "search_youtube",
@@ -151,8 +219,9 @@ _COMMANDS = [
     {
         "name": "open_site",
         "patterns": [
-            r'\bopen\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|spotify|twitch|x\.com)\b',
-            r'\bgo\s+to\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|spotify|twitch)\b',
+            r'\bopen\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|twitch|x\.com)\b',
+            r'\bgo\s+to\s+(?:google|github|reddit|twitter|facebook|instagram|netflix|twitch)\b',
+            r'\bgo\s+to\s+spotify\s*$',   # only bare "go to spotify" — not "go to spotify and click next"
         ],
         "tool":    "open_url",
         "extract": _extract_url,

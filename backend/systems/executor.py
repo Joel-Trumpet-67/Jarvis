@@ -12,6 +12,7 @@ import webbrowser
 import urllib.parse
 
 from backend.systems.apps.launcher import launch_app as _launch_app
+from backend.systems import media as _media
 
 
 # ---------------------------------------------------------------------------
@@ -56,6 +57,13 @@ _ACTIONS = {
     "open_app":       _open_app,
     "open_url":       _open_url,
     "search_youtube": _search_youtube,
+    "next_track":     _media.next_track,
+    "prev_track":     _media.prev_track,
+    "play_pause":     _media.play_pause,
+    "stop_media":     _media.stop_media,
+    "volume_up":      _media.volume_up,
+    "volume_down":    _media.volume_down,
+    "mute":           _media.mute,
 }
 
 
