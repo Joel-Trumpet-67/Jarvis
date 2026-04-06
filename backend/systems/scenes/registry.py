@@ -66,12 +66,9 @@ SCENES: dict[str, dict] = {
             {"type": "snap",   "title": "Visual Studio Code", "position": "left",
                                 "monitor": 0, "wait": 10},
 
-            # 3. Snap Spotify — do it twice because Spotify re-maximizes on load
+            # 3. Snap Spotify — verify loop will drag with mouse if it fights back
             {"type": "snap",   "title": "Spotify",  "position": "right",
                                 "monitor": 0, "wait": 4},
-            {"type": "wait",   "seconds": 1.5},
-            {"type": "snap",   "title": "Spotify",  "position": "right",
-                                "monitor": 0, "wait": 2},
 
             # 4. Claude desktop app — left half of secondary monitor
             {"type": "open_app", "name": "claude"},

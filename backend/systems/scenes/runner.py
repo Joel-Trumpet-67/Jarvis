@@ -11,7 +11,7 @@ import time
 import subprocess
 import webbrowser
 
-from backend.systems.scenes.windows import snap, find_window
+from backend.systems.scenes.windows import snap_and_verify, find_window
 from backend.systems.apps.launcher import launch_app
 
 _PF     = os.environ.get("ProgramFiles", r"C:\Program Files")
@@ -80,7 +80,8 @@ def run_scene(scene: dict):
             hwnd = find_window(title, timeout=wait_sec)
             if hwnd:
                 time.sleep(0.4)  # let the window finish rendering
-                snap(position=position, monitor_index=monitor, hwnd=hwnd)
+                snap_and_verify(position=position, monitor_index=monitor,
+                                hwnd=hwnd, max_attempts=3)
 
     yield {"type": "done"}
 
