@@ -156,11 +156,14 @@ _COMMANDS = [
     {
         "name": "play_pause",
         "patterns": [
-            r'\bpause\s+(?:the\s+)?(?:music|song|track|spotify)?\b',
-            r'\bresume\s+(?:the\s+)?(?:music|song|spotify)?\b',
+            r'\bpause\b',
+            r'\bunpause\b',
+            r'\bresume\s+(?:the\s+)?(?:music|song|spotify|playing)?\b',
             r'\bplay[/ ]pause\b',
+            r'\bplay\s+(?:the\s+)?(?:music|song|spotify)\b',
             r'\bstop\s+(?:the\s+)?music\b',
-            r'\btoggle\s+(?:the\s+)?music\b',
+            r'\btoggle\s+(?:the\s+)?(?:music|playback)\b',
+            r'\bkeep\s+playing\b',
         ],
         "tool":    "play_pause",
         "extract": lambda _: {},
