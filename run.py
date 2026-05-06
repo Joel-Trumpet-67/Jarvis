@@ -1,5 +1,5 @@
 """
-run.py — EIGENFORM entry point.
+run.py — Jarvis entry point.
 
 Run from the project root:
     python run.py
@@ -92,9 +92,9 @@ def main():
     debug = CONFIG.get("flask_debug", False)
     url   = f"http://{host}:{port}"
 
-    ai_name = CONFIG.get("ai_name", "Rocky")
+    ai_name = CONFIG.get("ai_name", "Jarvis")
     print(f"\n{'=' * 54}")
-    print(f"  EIGENFORM  —  {ai_name.upper()}")
+    print(f"  {ai_name.upper()}")
     print(f"{'=' * 54}")
     print(f"  AI     : {ai_name}")
     print(f"  Model  : {CONFIG.get('model_name')} @ {CONFIG.get('model_api_url')}")
@@ -124,7 +124,7 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n  Shutting down EIGENFORM. Goodbye.")
+        print("\n  Shutting down Jarvis. Goodbye.")
 
 
 if __name__ == "__main__":

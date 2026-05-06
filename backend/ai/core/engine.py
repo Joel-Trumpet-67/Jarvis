@@ -32,16 +32,15 @@ from backend.ai.memory.short_term import get_session
 
 def _sanitize(text: str, ai_name: str) -> str:
     """
-    Replace any Jarvis identity slips with the correct AI name.
+    Sanitize any identity slips in the AI's output.
     Operates on complete strings (not per-token) to catch split patterns.
     """
-    text = re.sub(r'J\.A\.R\.V\.I\.S\.?', ai_name, text, flags=re.IGNORECASE)
-    text = re.sub(r'\bJARVIS\b', ai_name, text, flags=re.IGNORECASE)
+    # No-op: Jarvis is the correct name, nothing to replace
     return text
 
 
 _TONE_REMINDER = (
-    "Reminder: you are Rocky. Calm, dry, efficient. You execute tasks — you do not guide. "
+    "Reminder: your personality is Jarvis. Calm, dry, efficient. You execute tasks — you do not guide. "
     "No emojis. No filler openers. No sycophancy. No emotional support language. No slang. "
     "Speak like a capable person, not a chatbot. Do not label responses. Do not end with 'Proceed.'"
 )
@@ -51,9 +50,9 @@ _REMINDER_EVERY_N = 6  # Inject a tone reminder every N messages
 
 _VOICE_SEED = [
     {"role": "user",      "content": "Who are you?"},
-    {"role": "assistant", "content": "I'm Rocky. I run EIGENFORM — system control, task execution, questions. What do you need?"},
+    {"role": "assistant", "content": "I'm Jarvis. System control, task execution, questions — what do you need?"},
     {"role": "user",      "content": "What can you do?"},
-    {"role": "assistant", "content": "Handle your system, open apps, search the web, manage files, answer questions. Tell me what needs doing."},
+    {"role": "assistant", "content": "Open apps, browse the web, manage files, answer questions, modify my own code. Tell me what needs doing."},
     {"role": "user",      "content": "Play Bohemian Rhapsody on YouTube"},
     {"role": "assistant", "content": '{"action": "search_youtube", "query": "Bohemian Rhapsody Queen"}'},
     {"role": "user",      "content": "Open Google"},
@@ -66,7 +65,7 @@ def _build_messages(session_id: str, user_message: str, system_prompt: str) -> l
     Assemble the messages array for the model API.
     Format: [system, voice_seed, ...history, (tone reminder if due), user_message]
 
-    Voice seed: two pre-baked exchanges that anchor Rocky's tone before the
+    Voice seed: two pre-baked exchanges that anchor Jarvis's tone before the
     real conversation starts. This prevents the model from freestyling on the
     opening message, which is when personality drift is worst.
 
@@ -141,7 +140,7 @@ def stream_response(
     """
     session  = get_session(session_id)
     session.clear_cancel()
-    ai_name  = CONFIG.get("ai_name", "Rocky")
+    ai_name  = CONFIG.get("ai_name", "Jarvis")
 
     messages   = _build_messages(session_id, user_message, system_prompt)
     api_format = CONFIG.get("api_format", "ollama")

@@ -20,7 +20,7 @@ import json
 from flask import Blueprint, request, Response, stream_with_context
 
 from backend.ai.core.dispatcher import dispatch
-from backend.ai.personality.rocky import get_system_prompt
+from backend.ai.personality.jarvis import get_system_prompt
 from backend.api.routes.status import mark_model_reachable
 
 chat_bp = Blueprint("chat", __name__)

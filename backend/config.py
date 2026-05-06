@@ -12,7 +12,7 @@ def _get_root() -> str:
     """
     Return the project root directory.
     - Frozen (PyInstaller exe): root = directory containing the exe,
-      so settings.json lives next to EIGENFORM.exe and stays editable.
+      so settings.json lives next to Jarvis.exe and stays editable.
     - Source: root = project root (two levels up from this file).
     """
     if getattr(sys, "frozen", False):
@@ -26,7 +26,7 @@ SETTINGS_PATH = os.path.join(_ROOT, "data", "config", "settings.json")
 
 def load_config() -> dict:
     if not os.path.exists(SETTINGS_PATH):
-        print(f"[EIGENFORM] FATAL: settings.json not found at:\n  {SETTINGS_PATH}")
+        print(f"[Jarvis] FATAL: settings.json not found at:\n  {SETTINGS_PATH}")
         sys.exit(1)
 
     try:
@@ -34,14 +34,14 @@ def load_config() -> dict:
             config = json.load(f)
 
         print(
-            f"[EIGENFORM] Config loaded — "
+            f"[Jarvis] Config loaded — "
             f"model: {config.get('model_name')} "
             f"@ {config.get('model_api_url')}"
         )
         return config
 
     except json.JSONDecodeError as e:
-        print(f"[EIGENFORM] FATAL: settings.json is malformed:\n  {e}")
+        print(f"[Jarvis] FATAL: settings.json is malformed:\n  {e}")
         sys.exit(1)
 
 

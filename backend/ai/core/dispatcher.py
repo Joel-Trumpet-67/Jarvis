@@ -1,8 +1,8 @@
 """
-dispatcher.py — Intent router for EIGENFORM.
+dispatcher.py — Intent router for Jarvis.
 
 Checks the message against command patterns BEFORE touching the AI model.
-If it matches a command, it executes directly and returns Rocky's confirmation.
+If it matches a command, it executes directly and returns a confirmation.
 If nothing matches, it falls through to the AI for normal conversation.
 
 This means commands are 100% reliable — the model's RLHF training never
