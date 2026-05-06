@@ -1,10 +1,10 @@
 """
-registry.py — Scene definitions for EIGENFORM.
+registry.py — Scene definitions for Jarvis.
 
-A scene is a named routine Rocky runs when a trigger phrase is detected.
+A scene is a named routine Jarvis runs when a trigger phrase is detected.
 Each scene has:
   patterns  — regex list (any match triggers the scene)
-  greeting  — what Rocky says when the scene starts
+  greeting  — what Jarvis says when the scene starts
   actions   — list of steps executed in order
 
 ────────────────────────────────────────────────────────────────
@@ -27,14 +27,14 @@ Action types
     title: str      — substring of the window title to find
     position: str   — left | right | full | max
                       top-left | top-right | bottom-left | bottom-right
-    monitor: int    — 0 = primary (1920×1080), 1 = secondary (1366×768)
+    monitor: int    — 0 = primary, 1 = secondary
     wait: float     — seconds to wait for the window to appear (default 5)
 
   wait
     seconds: float  — pause between actions
 
   say
-    text: str       — Rocky says something mid-scene
+    text: str       — Jarvis says something mid-scene
 
 ────────────────────────────────────────────────────────────────
 """
@@ -45,11 +45,9 @@ _PF    = os.environ.get("ProgramFiles",        r"C:\Program Files")
 _PF86  = os.environ.get("ProgramFiles(x86)",   r"C:\Program Files (x86)")
 _CHROME = os.path.join(_PF, r"Google\Chrome\Application\chrome.exe")
 
-SCENES: dict[str, dict] = {
+SCENES: dict = {
 
-    # ── "Daddy's home" ─────────────────────────────────────────────────────
-    # Primary monitor   (0): 1920×1080  — VS Code (left 2/3) + Spotify (right 1/3)
-    # Secondary monitor (1): 1366×768   — Claude (left half) + ChatGPT (right half)
+    # ── "Daddy's home" ──────────────────────────────────────────────────
     "home": {
         "patterns": [
             r"wake\s+up\s+daddy.?s\s+home",
@@ -58,33 +56,23 @@ SCENES: dict[str, dict] = {
         ],
         "greeting": "Welcome home. Setting things up.",
         "actions": [
-            # 1. Start Spotify playing — don't snap yet, it re-maximizes on load
             {"type": "spotify_playlist", "id": "4K92J71PPuxqvq8l8Q2tlO"},
-
-            # 2. VS Code with EIGENFORM — snap left half of primary
-            {"type": "open_app", "name": "eigenform"},
-            {"type": "snap",   "title": "Visual Studio Code", "position": "left",
-                                "monitor": 0, "wait": 10},
-
-            # 3. Snap Spotify — verify loop will drag with mouse if it fights back
-            {"type": "snap",   "title": "Spotify",  "position": "right",
-                                "monitor": 0, "wait": 4},
-
-            # 4. Claude desktop app — left half of secondary monitor
+            {"type": "open_app", "name": "vscode"},
+            {"type": "snap",    "title": "Visual Studio Code", "position": "left",
+                                 "monitor": 0, "wait": 10},
+            {"type": "snap",    "title": "Spotify",  "position": "right",
+                                 "monitor": 0, "wait": 4},
             {"type": "open_app", "name": "claude"},
-            {"type": "snap",   "title": "Claude",   "position": "left",
-                                "monitor": 1, "wait": 8},
-
-            # 5. ChatGPT desktop app — right half of secondary monitor
+            {"type": "snap",    "title": "Claude",   "position": "left",
+                                 "monitor": 1, "wait": 8},
             {"type": "open_app", "name": "chatgpt"},
-            {"type": "snap",   "title": "ChatGPT",  "position": "right",
-                                "monitor": 1, "wait": 8},
-
+            {"type": "snap",    "title": "ChatGPT",  "position": "right",
+                                 "monitor": 1, "wait": 8},
             {"type": "say", "text": "All set."},
         ],
     },
 
-    # ── Work mode ──────────────────────────────────────────────────────────
+    # ── Work mode ──────────────────────────────────────────────────────
     "work": {
         "patterns": [
             r"work\s+mode",
@@ -93,9 +81,9 @@ SCENES: dict[str, dict] = {
         ],
         "greeting": "Work mode.",
         "actions": [
-            {"type": "open_app", "name": "eigenform"},
-            {"type": "snap",     "title": "EIGENFORM", "position": "full",
-                                  "monitor": 0, "wait": 8},
+            {"type": "open_app", "name": "vscode"},
+            {"type": "snap",    "title": "Visual Studio Code", "position": "full",
+                                 "monitor": 0, "wait": 8},
             {"type": "say", "text": "VS Code up."},
         ],
     },
