@@ -4,6 +4,7 @@ const loginForm = document.getElementById("login-form");
 const loginError = document.getElementById("login-error");
 const displayNameEl = document.getElementById("display-name");
 const logoutBtn = document.getElementById("logout-btn");
+const switchAccountBtn = document.getElementById("switch-account-btn");
 const chatLog = document.getElementById("chat-log");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
@@ -13,6 +14,24 @@ const approvalList = document.getElementById("approval-list");
 
 let currentUser = null;
 let pendingPollHandle = null;
+
+const REMEMBER_KEY = "jarvis-remembered-login";
+
+function rememberLogin(username, password) {
+  localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }));
+}
+
+function getRememberedLogin() {
+  try {
+    return JSON.parse(localStorage.getItem(REMEMBER_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function forgetLogin() {
+  localStorage.removeItem(REMEMBER_KEY);
+}
 
 function addBubble(role, text) {
   const bubble = document.createElement("div");
@@ -112,6 +131,7 @@ loginForm.addEventListener("submit", async (event) => {
 
   try {
     const user = await API.login(username, password);
+    rememberLogin(username, password);
     await enterApp(user);
   } catch (err) {
     loginError.textContent = err.message;
@@ -122,7 +142,15 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
+switchAccountBtn.addEventListener("click", async () => {
+  forgetLogin();
+  await API.logout();
+  currentUser = null;
+  showLogin();
+});
+
 logoutBtn.addEventListener("click", async () => {
+  forgetLogin();
   await API.logout();
   currentUser = null;
   showLogin();
@@ -166,12 +194,24 @@ Voice.init((transcript) => {
     const status = await API.me();
     if (status.authenticated) {
       await enterApp(status);
-    } else {
-      showLogin();
+      return;
     }
   } catch {
-    showLogin();
+    // fall through to remembered-login attempt
   }
+
+  const remembered = getRememberedLogin();
+  if (remembered) {
+    try {
+      const user = await API.login(remembered.username, remembered.password);
+      await enterApp(user);
+      return;
+    } catch {
+      forgetLogin();
+    }
+  }
+
+  showLogin();
 })();
 
 if ("serviceWorker" in navigator) {
