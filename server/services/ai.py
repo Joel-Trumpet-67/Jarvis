@@ -1,12 +1,7 @@
 import json
 import re
 
-from anthropic import Anthropic
-
-from server.config import ANTHROPIC_API_KEY, ANTHROPIC_MODEL
-from server.services import memory, registry
-
-_client = Anthropic(api_key=ANTHROPIC_API_KEY) if ANTHROPIC_API_KEY else None
+from server.services import llm, memory, registry
 
 PROPOSE_TOOL_PATTERN = re.compile(r"<propose_tool>(.*?)</propose_tool>", re.DOTALL)
 MEMORY_UPDATE_PATTERN = re.compile(r"<memory_update>(.*?)</memory_update>", re.DOTALL)
@@ -70,9 +65,6 @@ def _extract_block(pattern, text):
 
 
 def generate_response(username, display_name, message):
-    if _client is None:
-        raise RuntimeError("ANTHROPIC_API_KEY is not configured")
-
     profile = memory.load_profile(username)
     tools = registry.load_registry()
     history = memory.load_history(username)[-20:]
@@ -82,14 +74,7 @@ def generate_response(username, display_name, message):
     messages = [{"role": h["role"], "content": h["content"]} for h in history]
     messages.append({"role": "user", "content": message})
 
-    response = _client.messages.create(
-        model=ANTHROPIC_MODEL,
-        max_tokens=1024,
-        system=system_prompt,
-        messages=messages,
-    )
-
-    raw_text = "".join(block.text for block in response.content if block.type == "text")
+    raw_text = llm.chat(system_prompt, messages)
 
     raw_text, memory_payload = _extract_block(MEMORY_UPDATE_PATTERN, raw_text)
     raw_text, tool_payload = _extract_block(PROPOSE_TOOL_PATTERN, raw_text)
