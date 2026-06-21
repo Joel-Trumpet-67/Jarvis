@@ -38,6 +38,33 @@ Open `http://localhost:5000` and log in as `joel` or `valerie`.
 
 Phone needs to reach the machine running the server (same WiFi, or eventually via Tailscale). In Safari, open `http://<your-computer's-LAN-IP>:5000`, then Share → Add to Home Screen.
 
+## Deploy to a free always-on VM (Google Cloud)
+
+This makes Jarvis reachable from your phone over the internet, regardless of
+whether any of your own computers are on.
+
+1. Create a free `e2-micro` VM on Google Cloud — must be in `us-west1`,
+   `us-central1`, or `us-east1` to qualify for the Always Free tier. Use
+   Ubuntu as the image.
+2. Get a free hostname pointing at the VM's external IP (e.g.
+   [duckdns.org](https://www.duckdns.org)) — Caddy needs a real domain to
+   issue a free HTTPS certificate, a bare IP won't work.
+3. SSH into the VM and run:
+   ```bash
+   git clone https://github.com/Joel-Trumpet-67/Jarvis.git
+   sudo JARVIS_DOMAIN=yourname.duckdns.org bash Jarvis/deploy/setup-vm.sh
+   ```
+4. Edit secrets on the VM: `sudo nano /opt/jarvis/.env`, then
+   `sudo systemctl restart jarvis`.
+5. Open `https://yourname.duckdns.org` from your phone, from anywhere.
+
+This runs Jarvis under `gunicorn` (not the Flask dev server) as a systemd
+service that restarts on crash/reboot, bound to localhost only — Caddy is the
+only process exposed to the internet, terminating HTTPS and proxying to
+Jarvis. `DEBUG` is forced off in this setup (the Flask debugger allows
+arbitrary code execution and must never be enabled on a public-facing
+server).
+
 ## Accounts
 
 - **Joel** — owner. Full chat/voice, tool registry visible, can approve/reject pending tools.
