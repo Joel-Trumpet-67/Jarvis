@@ -86,6 +86,11 @@ async function enterApp(user) {
     addBubble(entry.role === "user" ? "user" : "assistant", entry.content);
   }
 
+  if (pendingPollHandle) {
+    clearInterval(pendingPollHandle);
+    pendingPollHandle = null;
+  }
+
   if (user.role === "owner") {
     renderPendingTools();
     pendingPollHandle = setInterval(renderPendingTools, 8000);
@@ -96,7 +101,12 @@ async function enterApp(user) {
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (loginForm.dataset.submitting === "true") return;
+  loginForm.dataset.submitting = "true";
   loginError.hidden = true;
+  const submitBtn = loginForm.querySelector('button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
@@ -106,6 +116,9 @@ loginForm.addEventListener("submit", async (event) => {
   } catch (err) {
     loginError.textContent = err.message;
     loginError.hidden = false;
+  } finally {
+    loginForm.dataset.submitting = "false";
+    if (submitBtn) submitBtn.disabled = false;
   }
 });
 
