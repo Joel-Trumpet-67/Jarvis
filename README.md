@@ -38,6 +38,37 @@ Open `http://localhost:5000` and log in as `joel` or `valerie`.
 
 Phone needs to reach the machine running the server (same WiFi, or eventually via Tailscale). In Safari, open `http://<your-computer's-LAN-IP>:5000`, then Share → Add to Home Screen.
 
+## Deploy to Cloudflare Pages (free, always-on, no server to manage)
+
+This is the recommended way to run Jarvis for real. No VM, no sysadmin work,
+no sleep/cold-start delay — Cloudflare's free tier runs the backend as
+on-demand serverless functions (100k requests/day) and serves the frontend
+as static files, both from the same domain.
+
+The `functions/` directory is a parallel implementation of the same backend
+in `server/` (auth, chat, tool registry), written for Cloudflare's Workers
+runtime instead of Flask, using Cloudflare KV instead of local JSON files for
+storage (serverless functions have no persistent filesystem).
+
+1. Push this repo to GitHub (already done).
+2. In the [Cloudflare dashboard](https://dash.cloudflare.com), go to
+   **Workers & Pages → Create → Pages → Connect to Git**, pick this repo.
+   Build settings: no build command needed, output directory `client`.
+3. **Create a KV namespace**: Workers & Pages → KV → Create namespace (e.g.
+   `jarvis`). Then on your Pages project: Settings → Functions → KV namespace
+   bindings → add binding, variable name `JARVIS_KV`, pointing at that
+   namespace.
+4. **Add environment variables/secrets**: Settings → Environment variables,
+   add (as *secrets*, not plain text): `SECRET_KEY` (any random string),
+   `JOEL_PASSWORD`, `VALERIE_PASSWORD`, `AI_PROVIDER` (`groq` by default),
+   `GROQ_API_KEY` (or the equivalent for whichever provider you choose).
+5. Redeploy (Cloudflare auto-deploys on every push to `main` once connected).
+6. Open the `*.pages.dev` URL Cloudflare gives you — HTTPS is automatic. You
+   can later attach a custom domain for free under the same project.
+
+This keeps the original security model intact: the LLM API key lives only in
+Cloudflare's environment, never in the browser.
+
 ## Deploy to a free always-on VM (Google Cloud)
 
 This makes Jarvis reachable from your phone over the internet, regardless of
@@ -80,7 +111,7 @@ Each account has its own conversation history and profile (`data/users/<name>/`)
 ## Project structure
 
 ```
-server/
+server/             Flask backend — used for local dev and the VM deploy path
   app.py            Flask app factory, route registration
   config.py         env-based config, user accounts
   routes/           auth, chat, tools — one file per feature area
@@ -89,12 +120,18 @@ server/
     ai.py           system prompt, tool-proposal + memory-update parsing
     memory.py       per-user profile + history persistence
     registry.py     tool registry persistence
+functions/          Cloudflare Pages Functions backend — same behavior as
+                    server/, ported to serverless + KV for the Pages deploy
+  _lib/             auth (signed cookies), users, kv, llm, ai — JS ports of
+                    the equivalent server/ modules
+  api/              one file/folder per route, mirrors server/routes/
 client/
   index.html, app.js, api.js, voice.js, styles.css
   manifest.json, service-worker.js   PWA install + offline shell caching
 data/
-  users/joel/, users/valerie/        profile.json, history.json
-  tools/registry.json
+  users/joel/, users/valerie/        profile.json, history.json (local/VM only)
+  tools/registry.json                                  (local/VM only)
+deploy/             setup script + systemd/Caddy config for the VM deploy path
 ```
 
 ## What's not built yet
