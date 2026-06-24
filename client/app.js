@@ -4,6 +4,7 @@ const chatLog = document.getElementById("chat-log");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
 const micBtn = document.getElementById("mic-btn");
+const muteBtn = document.getElementById("mute-btn");
 const approvalCard = document.getElementById("approval-card");
 const approvalList = document.getElementById("approval-list");
 
@@ -111,6 +112,12 @@ micBtn.addEventListener("click", () => {
   micBtn.classList.add("listening");
   Voice.start();
 });
+
+muteBtn.addEventListener("click", () => {
+  const muted = Voice.toggleMute();
+  muteBtn.textContent = muted ? "🔇" : "🔊";
+});
+muteBtn.textContent = Voice.muted ? "🔇" : "🔊";
 
 Voice.init((transcript) => {
   micBtn.classList.remove("listening");

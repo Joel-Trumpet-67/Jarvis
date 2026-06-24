@@ -64,9 +64,32 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid #1f2a35;
   font-weight: 600;
+}
+
+.app-header span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#voice-select {
+  max-width: 40vw;
+  background: #1c2530;
+  border: 1px solid #2a3744;
+  color: #e6edf3;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+#mute-btn {
+  padding: 6px 10px;
+  font-size: 15px;
 }
 
 .app-header button {
