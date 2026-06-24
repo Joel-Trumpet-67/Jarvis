@@ -47,29 +47,12 @@ export async function getSession(context) {
   return verifySessionCookie(context.env, cookie);
 }
 
-export async function requireLogin(context) {
-  const session = await getSession(context);
-  if (!session) {
-    return {
-      error: new Response(JSON.stringify({ error: "login required" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      }),
-    };
-  }
-  return { session };
+const NO_LOGIN_SESSION = { user: "joel", role: "owner", display_name: "Joel" };
+
+export async function requireLogin() {
+  return { session: NO_LOGIN_SESSION };
 }
 
-export async function requireOwner(context) {
-  const { session, error } = await requireLogin(context);
-  if (error) return { error };
-  if (session.role !== "owner") {
-    return {
-      error: new Response(JSON.stringify({ error: "owner only" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
-      }),
-    };
-  }
-  return { session };
+export async function requireOwner() {
+  return { session: NO_LOGIN_SESSION };
 }

@@ -1,10 +1,5 @@
-const loginScreen = document.getElementById("login-screen");
 const appScreen = document.getElementById("app-screen");
-const loginForm = document.getElementById("login-form");
-const loginError = document.getElementById("login-error");
 const displayNameEl = document.getElementById("display-name");
-const logoutBtn = document.getElementById("logout-btn");
-const switchAccountBtn = document.getElementById("switch-account-btn");
 const chatLog = document.getElementById("chat-log");
 const chatForm = document.getElementById("chat-form");
 const chatInput = document.getElementById("chat-input");
@@ -15,39 +10,12 @@ const approvalList = document.getElementById("approval-list");
 let currentUser = null;
 let pendingPollHandle = null;
 
-const REMEMBER_KEY = "jarvis-remembered-login";
-
-function rememberLogin(username, password) {
-  localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }));
-}
-
-function getRememberedLogin() {
-  try {
-    return JSON.parse(localStorage.getItem(REMEMBER_KEY));
-  } catch {
-    return null;
-  }
-}
-
-function forgetLogin() {
-  localStorage.removeItem(REMEMBER_KEY);
-}
-
 function addBubble(role, text) {
   const bubble = document.createElement("div");
   bubble.className = `bubble ${role}`;
   bubble.textContent = text;
   chatLog.appendChild(bubble);
   chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-function showLogin() {
-  loginScreen.hidden = false;
-  appScreen.hidden = true;
-  if (pendingPollHandle) {
-    clearInterval(pendingPollHandle);
-    pendingPollHandle = null;
-  }
 }
 
 async function renderPendingTools() {
@@ -96,7 +64,6 @@ async function renderPendingTools() {
 async function enterApp(user) {
   currentUser = user;
   displayNameEl.textContent = `Jarvis — ${user.display_name}`;
-  loginScreen.hidden = true;
   appScreen.hidden = false;
   chatLog.innerHTML = "";
 
@@ -117,44 +84,6 @@ async function enterApp(user) {
     approvalCard.hidden = true;
   }
 }
-
-loginForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  if (loginForm.dataset.submitting === "true") return;
-  loginForm.dataset.submitting = "true";
-  loginError.hidden = true;
-  const submitBtn = loginForm.querySelector('button[type="submit"]');
-  if (submitBtn) submitBtn.disabled = true;
-
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const user = await API.login(username, password);
-    rememberLogin(username, password);
-    await enterApp(user);
-  } catch (err) {
-    loginError.textContent = err.message;
-    loginError.hidden = false;
-  } finally {
-    loginForm.dataset.submitting = "false";
-    if (submitBtn) submitBtn.disabled = false;
-  }
-});
-
-switchAccountBtn.addEventListener("click", async () => {
-  forgetLogin();
-  await API.logout();
-  currentUser = null;
-  showLogin();
-});
-
-logoutBtn.addEventListener("click", async () => {
-  forgetLogin();
-  await API.logout();
-  currentUser = null;
-  showLogin();
-});
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -190,28 +119,7 @@ Voice.init((transcript) => {
 });
 
 (async function init() {
-  try {
-    const status = await API.me();
-    if (status.authenticated) {
-      await enterApp(status);
-      return;
-    }
-  } catch {
-    // fall through to remembered-login attempt
-  }
-
-  const remembered = getRememberedLogin();
-  if (remembered) {
-    try {
-      const user = await API.login(remembered.username, remembered.password);
-      await enterApp(user);
-      return;
-    } catch {
-      forgetLogin();
-    }
-  }
-
-  showLogin();
+  await enterApp({ username: "joel", role: "owner", display_name: "Joel" });
 })();
 
 if ("serviceWorker" in navigator) {
