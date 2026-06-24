@@ -122,9 +122,10 @@ server/             Flask backend — used for local dev and the VM deploy path
     registry.py     tool registry persistence
 functions/          Cloudflare Pages Functions backend — same behavior as
                     server/, ported to serverless + KV for the Pages deploy
-  _lib/             auth (signed cookies), users, kv, llm, ai — JS ports of
-                    the equivalent server/ modules
-  api/              one file/folder per route, mirrors server/routes/
+  _lib/             auth (signed cookies), users, kv, llm, ai, weather — JS
+                    ports of the equivalent server/ modules
+src/index.js        actual deployed Worker entry point (routes + static
+                    asset fallback), imports functions/_lib directly
 client/
   index.html, app.js, api.js, voice.js, styles.css
   manifest.json, service-worker.js   PWA install + offline shell caching
@@ -134,6 +135,43 @@ data/
 deploy/             setup script + systemd/Caddy config for the VM deploy path
 ```
 
-## What's not built yet
+## What's built
 
-PC agent / Tailscale control, iOS Shortcuts bridge, self-editing source with git rollback, daily briefing, weather/calendar, push notifications, GPS/camera/clipboard. These don't exist as stubs — they're just not started.
+- Chat with persistent per-user memory (facts/preferences), notes, tasks,
+  goals, shopping list, and reminders — all AI-readable/writable via
+  structured blocks in its replies, and separately viewable/editable from the
+  📋 panel in the UI.
+- Daily briefing card (weather + due reminders + open task count) on app
+  open, using the phone's GPS via the browser Geolocation API and the free
+  Open-Meteo API (no key required).
+- Client-triggered actions the AI can invoke when asked: phone call/SMS/
+  FaceTime/email/Maps deep links, vibration, clipboard write, the native
+  share sheet, and triggering a named iOS Shortcut via the
+  `shortcuts://run-shortcut?name=` URL scheme (for HomeKit, alarms, calendar,
+  WiFi, automations — anything you've wired up as a Shortcut).
+- Tool registry with Joel-only approval card (unchanged from the Foundation).
+- Voice input (Web Speech API) and voice output with a picker across your
+  device's available TTS voices, plus a mute toggle.
+
+## What's not built, and why
+
+These three were in the original spec but don't fit a serverless Worker —
+not because of effort, but because a Cloudflare Worker has no persistent
+process, no filesystem, and no git access at runtime by design (that's what
+makes it free and always-on with no server to manage):
+
+- **PC agent / Tailscale control** — needs something running continuously on
+  Joel's actual machine to listen for commands. This has to be a separate
+  small always-on process on that PC, not code inside the Worker.
+- **Self-editing source with git rollback** — the Worker can't write to its
+  own deployed filesystem or run git; "editing its own source" would require
+  it to call the GitHub API to commit, then wait for a redeploy, which is a
+  fundamentally different (and slower, riskier) mechanism than what the spec
+  describes.
+- **True push notifications** — iOS push requires a registered push service
+  endpoint (APNs) and a backend that can wake up and send to it on a
+  schedule; a Worker only runs in response to an incoming request, it can't
+  wake itself up to push something to you.
+
+None of these are stubbed — they're just not present, per the project's own
+rule against half-finished features.

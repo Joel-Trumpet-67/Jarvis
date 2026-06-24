@@ -27,3 +27,14 @@ export async function loadRegistry(env) {
 export async function saveRegistry(env, registry) {
   await env.JARVIS_KV.put("tools:registry", JSON.stringify(registry));
 }
+
+export const LIST_TYPES = ["notes", "tasks", "goals", "shopping", "reminders"];
+
+export async function loadList(env, username, type) {
+  const raw = await env.JARVIS_KV.get(`${type}:${username}`);
+  return raw ? JSON.parse(raw) : [];
+}
+
+export async function saveList(env, username, type, items) {
+  await env.JARVIS_KV.put(`${type}:${username}`, JSON.stringify(items));
+}

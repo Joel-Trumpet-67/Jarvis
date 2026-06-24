@@ -27,12 +27,41 @@ const API = {
     return fetch("/api/chat/history").then(this._json);
   },
 
-  sendMessage(message) {
+  sendMessage(message, location) {
     return fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, lat: location?.lat, lon: location?.lon }),
     }).then(this._json);
+  },
+
+  briefing(location) {
+    const params = location ? `?lat=${location.lat}&lon=${location.lon}` : "";
+    return fetch(`/api/briefing${params}`).then(this._json);
+  },
+
+  listItems(type) {
+    return fetch(`/api/lists/${type}`).then(this._json);
+  },
+
+  addListItem(type, text, due) {
+    return fetch(`/api/lists/${type}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, due }),
+    }).then(this._json);
+  },
+
+  toggleListItem(type, id, done) {
+    return fetch(`/api/lists/${type}/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done }),
+    }).then(this._json);
+  },
+
+  removeListItem(type, id) {
+    return fetch(`/api/lists/${type}/${encodeURIComponent(id)}`, { method: "DELETE" }).then(this._json);
   },
 
   pendingTools() {

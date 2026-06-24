@@ -15,9 +15,28 @@
       <span id="display-name">Jarvis</span>
       <select id="voice-select" title="Voice"></select>
       <button id="mute-btn" type="button" title="Mute voice output">🔊</button>
+      <button id="lists-btn" type="button" title="Notes, tasks, goals, shopping, reminders">📋</button>
     </header>
 
+    <div id="briefing-card" class="briefing-card" hidden></div>
+
     <main id="chat-log" class="chat-log"></main>
+
+    <section id="lists-panel" class="lists-panel" hidden>
+      <div class="lists-tabs">
+        <button class="lists-tab" data-type="notes">Notes</button>
+        <button class="lists-tab" data-type="tasks">Tasks</button>
+        <button class="lists-tab" data-type="goals">Goals</button>
+        <button class="lists-tab" data-type="shopping">Shopping</button>
+        <button class="lists-tab" data-type="reminders">Reminders</button>
+        <button id="lists-close" type="button" title="Close">✕</button>
+      </div>
+      <form id="lists-add-form">
+        <input id="lists-add-input" type="text" placeholder="Add item" autocomplete="off" />
+        <button type="submit">Add</button>
+      </form>
+      <ul id="lists-items"></ul>
+    </section>
 
     <form id="chat-form" class="chat-form">
       <button id="mic-btn" type="button" title="Voice input">🎤</button>

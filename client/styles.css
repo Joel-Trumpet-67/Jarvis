@@ -101,6 +101,110 @@ body {
   cursor: pointer;
 }
 
+.briefing-card {
+  padding: 10px 16px;
+  background: #10151c;
+  border-bottom: 1px solid #1f2a35;
+  font-size: 13px;
+  color: #b6c2cf;
+}
+
+.lists-panel {
+  border-top: 1px solid #1f2a35;
+  background: #10151c;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.lists-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px;
+  overflow-x: auto;
+}
+
+.lists-tab {
+  background: #1c2530;
+  border: 1px solid #2a3744;
+  color: #e6edf3;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lists-tab.active {
+  background: #2563eb;
+}
+
+#lists-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #e6edf3;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#lists-add-form {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 8px;
+}
+
+#lists-add-input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #2a3744;
+  background: #0b0f14;
+  color: #e6edf3;
+}
+
+#lists-add-form button {
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+#lists-items {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+}
+
+#lists-items li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1f2a35;
+  font-size: 14px;
+}
+
+#lists-items li.done span {
+  text-decoration: line-through;
+  color: #6b7785;
+}
+
+#lists-items li span {
+  flex: 1;
+}
+
+#lists-items li button {
+  background: none;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 .chat-log {
   flex: 1;
   overflow-y: auto;

@@ -6,8 +6,9 @@ import {
   requireLogin,
   requireOwner,
 } from "../functions/_lib/auth.js";
-import { loadHistory, loadRegistry, saveRegistry } from "../functions/_lib/kv.js";
+import { loadHistory, loadRegistry, saveRegistry, loadList, saveList, LIST_TYPES } from "../functions/_lib/kv.js";
 import { generateResponse } from "../functions/_lib/ai.js";
+import { getWeather } from "../functions/_lib/weather.js";
 
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -62,11 +63,102 @@ export default {
       const data = await request.json().catch(() => ({}));
       const message = (data.message || "").trim();
       if (!message) return json({ error: "message is required" }, 400);
+      const location =
+        data.lat != null && data.lon != null ? { lat: data.lat, lon: data.lon } : null;
       try {
-        const reply = await generateResponse(env, session.user, session.display_name, message);
-        return json({ reply });
+        const { reply, action } = await generateResponse(
+          env,
+          session.user,
+          session.display_name,
+          message,
+          location
+        );
+        return json({ reply, action });
       } catch (err) {
         return json({ error: err.message }, 500);
+      }
+    }
+
+    if (pathname === "/api/weather" && method === "GET") {
+      const { error } = await requireLogin({ request, env });
+      if (error) return error;
+      const url = new URL(request.url);
+      const lat = url.searchParams.get("lat");
+      const lon = url.searchParams.get("lon");
+      if (lat == null || lon == null) return json({ error: "lat and lon are required" }, 400);
+      try {
+        return json(await getWeather(lat, lon));
+      } catch (err) {
+        return json({ error: err.message }, 500);
+      }
+    }
+
+    if (pathname === "/api/briefing" && method === "GET") {
+      const { session, error } = await requireLogin({ request, env });
+      if (error) return error;
+      const url = new URL(request.url);
+      const lat = url.searchParams.get("lat");
+      const lon = url.searchParams.get("lon");
+
+      let weather = null;
+      if (lat != null && lon != null) {
+        try {
+          weather = await getWeather(lat, lon);
+        } catch {
+          weather = null;
+        }
+      }
+
+      const reminders = await loadList(env, session.user, "reminders");
+      const now = Date.now();
+      const dueReminders = reminders.filter((r) => r.due && new Date(r.due).getTime() <= now);
+      const tasks = await loadList(env, session.user, "tasks");
+      const openTasks = tasks.filter((t) => !t.done);
+
+      return json({ weather, dueReminders, openTaskCount: openTasks.length });
+    }
+
+    const listMatch = pathname.match(/^\/api\/lists\/([^/]+)(?:\/([^/]+))?$/);
+    if (listMatch && LIST_TYPES.includes(listMatch[1])) {
+      const { session, error } = await requireLogin({ request, env });
+      if (error) return error;
+      const [, type, itemId] = listMatch;
+
+      if (method === "GET" && !itemId) {
+        return json(await loadList(env, session.user, type));
+      }
+
+      if (method === "POST" && !itemId) {
+        const data = await request.json().catch(() => ({}));
+        if (!data.text || !data.text.trim()) return json({ error: "text is required" }, 400);
+        const items = await loadList(env, session.user, type);
+        const item = {
+          id: Math.random().toString(36).slice(2, 10),
+          text: data.text.trim(),
+          due: data.due || null,
+          done: false,
+          created_at: Date.now(),
+        };
+        items.push(item);
+        await saveList(env, session.user, type, items);
+        return json(item, 201);
+      }
+
+      if (method === "PATCH" && itemId) {
+        const data = await request.json().catch(() => ({}));
+        const items = await loadList(env, session.user, type);
+        const item = items.find((i) => i.id === itemId);
+        if (!item) return json({ error: "item not found" }, 404);
+        if (data.done !== undefined) item.done = data.done;
+        await saveList(env, session.user, type, items);
+        return json(item);
+      }
+
+      if (method === "DELETE" && itemId) {
+        const items = await loadList(env, session.user, type);
+        const filtered = items.filter((i) => i.id !== itemId);
+        await saveList(env, session.user, type, filtered);
+        return json({ ok: true });
       }
     }
 
