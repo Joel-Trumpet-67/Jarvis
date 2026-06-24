@@ -1,7 +1,4 @@
-const loginScreen = document.getElementById("login-screen");
 const appScreen = document.getElementById("app-screen");
-const loginForm = document.getElementById("login-form");
-const loginError = document.getElementById("login-error");
 const displayNameEl = document.getElementById("display-name");
 const logoutBtn = document.getElementById("logout-btn");
 const switchAccountBtn = document.getElementById("switch-account-btn");
@@ -39,15 +36,6 @@ function addBubble(role, text) {
   bubble.textContent = text;
   chatLog.appendChild(bubble);
   chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-function showLogin() {
-  loginScreen.hidden = false;
-  appScreen.hidden = true;
-  if (pendingPollHandle) {
-    clearInterval(pendingPollHandle);
-    pendingPollHandle = null;
-  }
 }
 
 async function renderPendingTools() {
@@ -96,7 +84,6 @@ async function renderPendingTools() {
 async function enterApp(user) {
   currentUser = user;
   displayNameEl.textContent = `Jarvis — ${user.display_name}`;
-  loginScreen.hidden = true;
   appScreen.hidden = false;
   chatLog.innerHTML = "";
 
